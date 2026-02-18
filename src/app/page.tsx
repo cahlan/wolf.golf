@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { createTestGame } from '@/lib/test-data';
 import { Button, Fade } from '@/components/ui';
 
-export default function HomePage() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { hasActiveGame, resumeGame, weekendGames, setGame, setIsScorekeeper } = useGame();
@@ -67,5 +67,13 @@ export default function HomePage() {
         )}
       </Fade>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
