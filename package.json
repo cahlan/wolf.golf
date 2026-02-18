@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "LD_LIBRARY_PATH=/tmp/libasound_extract/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH npx playwright test",
+    "test:ui": "LD_LIBRARY_PATH=/tmp/libasound_extract/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH npx playwright test --ui",
+    "test:headed": "LD_LIBRARY_PATH=/tmp/libasound_extract/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH npx playwright test --headed"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -16,6 +19,7 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
