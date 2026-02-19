@@ -1034,3 +1034,367 @@ describe('Scenario 10: Settlement math', () => {
     }
   });
 });
+
+// ─── Advanced config options ─────────────────────────────────────────────────
+
+describe('Advanced config options', () => {
+  // ── Helper: Build a 16-hole game where Shane has 0 points (last place) ────
+  // Reuse the design from Scenario 9: Cahlan=8, Lance=2, Brad=2, Shane=0
+  function buildShaneLastPlaceHoles(): CompletedHole[] {
+    const result: CompletedHole[] = [];
+
+    const holeConfigs: Record<number, {
+      partner: string | null;
+      loneWolf: LoneWolfType | null;
+      grossOverrides?: Record<string, number>;
+    }> = {
+      2: { partner: null, loneWolf: 'early', grossOverrides: { Cahlan: COURSE_HOLES[1].par - 1 } },
+      10: { partner: null, loneWolf: 'early', grossOverrides: { Cahlan: COURSE_HOLES[9].par - 1 } },
+      3: { partner: null, loneWolf: 'default', grossOverrides: { Brad: COURSE_HOLES[2].par - 1 } },
+      9: { partner: null, loneWolf: 'default', grossOverrides: { Lance: COURSE_HOLES[8].par - 1 } },
+      6: { partner: null, loneWolf: 'default', grossOverrides: { Cahlan: COURSE_HOLES[5].par - 1 } },
+      13: { partner: null, loneWolf: 'default', grossOverrides: { Lance: COURSE_HOLES[12].par - 1 } },
+      7: { partner: 'Lance', loneWolf: null },
+      14: { partner: 'Brad', loneWolf: null },
+    };
+
+    for (let holeNum = 1; holeNum <= 16; holeNum++) {
+      const wolf = getWolfName(holeNum);
+      const wolfIdx = PLAYERS.indexOf(wolf);
+      const defaultPartner = PLAYERS[(wolfIdx + 1) % 4];
+      const hi = COURSE_HOLES[holeNum - 1];
+      const gross: Record<string, number> = {};
+      PLAYERS.forEach((p) => (gross[p] = hi.par));
+
+      const config = holeConfigs[holeNum];
+      const partner = config?.partner ?? (config?.loneWolf ? null : defaultPartner);
+      const loneWolf = config?.loneWolf ?? null;
+
+      if (config?.grossOverrides) {
+        Object.assign(gross, config.grossOverrides);
+      }
+
+      result.push(makeHole({ holeNum, wolf, partner, loneWolf, grossScores: gross }));
+    }
+
+    return result;
+  }
+
+  // ── Last place wolf disabled ──────────────────────────────────────────────
+
+  describe('Last place wolf disabled', () => {
+    const holes = buildShaneLastPlaceHoles();
+    const game = buildGame(holes, { lastPlaceWolf: false });
+
+    // Verify Shane is last place
+    const standings = calculateStandings(game);
+
+    it('Shane should be last place with 0 points', () => {
+      const lastPlayer = standings[standings.length - 1];
+      expect(lastPlayer.name).toBe('Shane');
+      expect(lastPlayer.points).toBe(0);
+    });
+
+    it('H17 wolf should follow normal rotation (NOT Shane)', () => {
+      const wolfIdx = getWolfForHole(game, 17);
+      const wolfName = PLAYERS[wolfIdx];
+      // Normal rotation: (17-1) % 4 = 0 → Lance
+      expect(wolfName).toBe('Lance');
+      expect(wolfName).not.toBe('Shane');
+    });
+
+    it('H18 wolf should follow normal rotation (NOT Shane)', () => {
+      const wolfIdx = getWolfForHole(game, 18);
+      const wolfName = PLAYERS[wolfIdx];
+      // Normal rotation: (18-1) % 4 = 1 → Cahlan
+      expect(wolfName).toBe('Cahlan');
+      expect(wolfName).not.toBe('Shane');
+    });
+  });
+
+  // ── Last place wolf custom start hole ─────────────────────────────────────
+
+  describe('Last place wolf custom start hole', () => {
+    const holes = buildShaneLastPlaceHoles();
+    const game = buildGame(holes, { lastPlaceWolf: true, lastPlaceWolfStartHole: 15 });
+
+    const standings = calculateStandings(game);
+
+    it('Shane should be last place with 0 points', () => {
+      const lastPlayer = standings[standings.length - 1];
+      expect(lastPlayer.name).toBe('Shane');
+      expect(lastPlayer.points).toBe(0);
+    });
+
+    it('H15 wolf should be Shane (last place, custom start)', () => {
+      const wolfIdx = getWolfForHole(game, 15);
+      expect(PLAYERS[wolfIdx]).toBe('Shane');
+    });
+
+    it('H16 wolf should be Shane (last place, custom start)', () => {
+      const wolfIdx = getWolfForHole(game, 16);
+      expect(PLAYERS[wolfIdx]).toBe('Shane');
+    });
+
+    it('H14 wolf should follow normal rotation (NOT Shane)', () => {
+      const wolfIdx = getWolfForHole(game, 14);
+      const wolfName = PLAYERS[wolfIdx];
+      // Normal rotation: (14-1) % 4 = 1 → Cahlan
+      expect(wolfName).toBe('Cahlan');
+      expect(wolfName).not.toBe('Shane');
+    });
+  });
+
+  // ── Payout structure helper ───────────────────────────────────────────────
+
+  // Build holes that produce standings: Cahlan=10, Brad=6, Lance=4, Shane=2
+  function buildPayoutHoles(): CompletedHole[] {
+    const result: CompletedHole[] = [];
+
+    for (let holeNum = 1; holeNum <= 18; holeNum++) {
+      const wolf = getWolfName(holeNum);
+      const hi = COURSE_HOLES[holeNum - 1];
+      const gross: Record<string, number> = {};
+      PLAYERS.forEach((p) => (gross[p] = hi.par));
+
+      let partner: string | null = null;
+      let loneWolf: LoneWolfType | null = null;
+
+      switch (holeNum) {
+        case 2:
+          loneWolf = 'early';
+          gross['Cahlan'] = hi.par - 1;
+          break;
+        case 6:
+          loneWolf = 'early';
+          gross['Cahlan'] = hi.par - 1;
+          break;
+        case 10:
+          loneWolf = 'default';
+          gross['Cahlan'] = hi.par - 1;
+          break;
+        case 1:
+          partner = 'Brad';
+          gross['Lance'] = hi.par - 1;
+          break;
+        case 5:
+          partner = 'Brad';
+          gross['Lance'] = hi.par - 1;
+          break;
+        case 3:
+          partner = 'Lance';
+          gross['Brad'] = hi.par - 1;
+          break;
+        case 7:
+          partner = 'Shane';
+          gross['Brad'] = hi.par - 1;
+          break;
+        case 11:
+          partner = 'Lance';
+          gross['Brad'] = hi.par - 1;
+          break;
+        case 15:
+          partner = 'Shane';
+          gross['Brad'] = hi.par - 1;
+          break;
+        default: {
+          const wolfIdx = PLAYERS.indexOf(wolf);
+          partner = PLAYERS[(wolfIdx + 1) % 4];
+          break;
+        }
+      }
+
+      result.push(makeHole({ holeNum, wolf, partner, loneWolf, grossScores: gross }));
+    }
+
+    return result;
+  }
+
+  // ── Payout structure: winner-takes-all ────────────────────────────────────
+
+  describe('Payout structure — winner-takes-all', () => {
+    const holes = buildPayoutHoles();
+    const game = buildGame(holes, { buyIn: 50, payoutStructure: 'winner-takes-all' });
+    const settlement = calculateSettlement(game);
+
+    it('standings should be sorted descending and contain all players', () => {
+      for (let i = 0; i < settlement.standings.length - 1; i++) {
+        expect(settlement.standings[i].points).toBeGreaterThanOrEqual(
+          settlement.standings[i + 1].points,
+        );
+      }
+      const names = settlement.standings.map((s) => s.name);
+      expect(names).toEqual(expect.arrayContaining(PLAYERS));
+    });
+
+    it('wolfNet: 1st=+100, 2nd=0, 3rd=-50, 4th=-50', () => {
+      expect(settlement.wolfNet[settlement.standings[0].name]).toBe(100);
+      expect(settlement.wolfNet[settlement.standings[1].name]).toBe(0);
+      expect(settlement.wolfNet[settlement.standings[2].name]).toBe(-50);
+      expect(settlement.wolfNet[settlement.standings[3].name]).toBe(-50);
+    });
+
+    it('wolfNet should sum to zero', () => {
+      const total = Object.values(settlement.wolfNet).reduce((a, b) => a + b, 0);
+      expect(total).toBe(0);
+    });
+  });
+
+  // ── Payout structure: top-two-split ───────────────────────────────────────
+
+  describe('Payout structure — top-two-split', () => {
+    const holes = buildPayoutHoles();
+    const game = buildGame(holes, { buyIn: 50, payoutStructure: 'top-two-split' });
+    const settlement = calculateSettlement(game);
+
+    it('wolfNet: 1st=+75, 2nd=+25, 3rd=-50, 4th=-50', () => {
+      expect(settlement.wolfNet[settlement.standings[0].name]).toBe(75);
+      expect(settlement.wolfNet[settlement.standings[1].name]).toBe(25);
+      expect(settlement.wolfNet[settlement.standings[2].name]).toBe(-50);
+      expect(settlement.wolfNet[settlement.standings[3].name]).toBe(-50);
+    });
+
+    it('wolfNet should sum to zero', () => {
+      const total = Object.values(settlement.wolfNet).reduce((a, b) => a + b, 0);
+      expect(total).toBe(0);
+    });
+
+    it('transfers should sum to zero', () => {
+      const net: Record<string, number> = {};
+      PLAYERS.forEach((p) => (net[p] = 0));
+      settlement.transfers.forEach((t) => {
+        net[t.from] -= t.amount;
+        net[t.to] += t.amount;
+      });
+      const totalNet = Object.values(net).reduce((a, b) => a + b, 0);
+      expect(Math.abs(totalNet)).toBeLessThan(0.01);
+    });
+  });
+
+  // ── Payout structure: top-three-split ─────────────────────────────────────
+
+  describe('Payout structure — top-three-split', () => {
+    const holes = buildPayoutHoles();
+    const game = buildGame(holes, { buyIn: 50, payoutStructure: 'top-three-split' });
+    const settlement = calculateSettlement(game);
+
+    it('wolfNet: 1st=+50, 2nd=+25, 3rd=+25, 4th=-100', () => {
+      expect(settlement.wolfNet[settlement.standings[0].name]).toBe(50);
+      expect(settlement.wolfNet[settlement.standings[1].name]).toBe(25);
+      expect(settlement.wolfNet[settlement.standings[2].name]).toBe(25);
+      expect(settlement.wolfNet[settlement.standings[3].name]).toBe(-100);
+    });
+
+    it('wolfNet should sum to zero', () => {
+      const total = Object.values(settlement.wolfNet).reduce((a, b) => a + b, 0);
+      expect(total).toBe(0);
+    });
+
+    it('transfers should sum to zero', () => {
+      const net: Record<string, number> = {};
+      PLAYERS.forEach((p) => (net[p] = 0));
+      settlement.transfers.forEach((t) => {
+        net[t.from] -= t.amount;
+        net[t.to] += t.amount;
+      });
+      const totalNet = Object.values(net).reduce((a, b) => a + b, 0);
+      expect(Math.abs(totalNet)).toBeLessThan(0.01);
+    });
+  });
+
+  // ── Skins carryover disabled ──────────────────────────────────────────────
+
+  describe('Skins carryover disabled', () => {
+    /**
+     * H1-H3: All players shoot par on no-stroke holes → all tie on net → no skin awarded, no carryover.
+     * H1 SI=15 (no strokes), H2 SI=13 (no strokes), H3 SI=17 (no strokes).
+     * H4 (par 4, SI=1, Lance/Brad/Shane get strokes): Cahlan shoots birdie (3), others par (4).
+     *   Net: Cahlan=3, Lance=3, Brad=3, Shane=3. Wait — others get strokes!
+     *   Lance: 4 - 1 = 3, Brad: 4 - 1 = 3, Shane: 4 - 1 = 3, Cahlan: 3 - 0 = 3. All tie!
+     *
+     * We need Cahlan to win outright on H4. Let Cahlan shoot eagle (2) → net 2. Others par → net 3.
+     */
+    const holes: CompletedHole[] = [];
+
+    // H1-H3: all par, all tie (no strokes)
+    for (let holeNum = 1; holeNum <= 3; holeNum++) {
+      const wolf = getWolfName(holeNum);
+      const wolfIdx = PLAYERS.indexOf(wolf);
+      const partner = PLAYERS[(wolfIdx + 1) % 4];
+      holes.push(parHole(holeNum, partner));
+    }
+
+    // H4: Cahlan eagle, others par → Cahlan net=2, others net=3 (with strokes)
+    holes.push(
+      makeHole({
+        holeNum: 4,
+        wolf: 'Shane',
+        partner: 'Lance',
+        loneWolf: null,
+        grossScores: { Lance: 4, Cahlan: 2, Brad: 4, Shane: 4 },
+      }),
+    );
+
+    const game = buildGame(holes, { skinsEnabled: true, skinsValue: 5, skinsCarryover: false });
+    const skinsData = calculateSkins(game);
+
+    it('carryover should be 0 (carryover disabled)', () => {
+      // Even after 3 tied holes, carryover stays 0
+      expect(skinsData.carryover).toBe(0);
+    });
+
+    it('no player should have skins from tied holes H1-H3', () => {
+      // Check skins after just 3 holes
+      const game3 = buildGame(holes.slice(0, 3), { skinsEnabled: true, skinsValue: 5, skinsCarryover: false });
+      const skins3 = calculateSkins(game3);
+      expect(skins3.skins['Lance']).toBe(0);
+      expect(skins3.skins['Cahlan']).toBe(0);
+      expect(skins3.skins['Brad']).toBe(0);
+      expect(skins3.skins['Shane']).toBe(0);
+      expect(skins3.carryover).toBe(0);
+    });
+
+    it('Cahlan should get exactly 1 skin on H4 (no carryover accumulated)', () => {
+      expect(skinsData.skins['Cahlan']).toBe(1);
+    });
+  });
+
+  // ── Skins carryover enabled (verify existing behavior) ────────────────────
+
+  describe('Skins carryover enabled', () => {
+    /**
+     * Same setup as above but with skinsCarryover: true (default).
+     * H1-H3 ties accumulate carryover = 3.
+     * H4: Cahlan wins → gets 1 + 3 = 4 skins.
+     */
+    const holes: CompletedHole[] = [];
+
+    for (let holeNum = 1; holeNum <= 3; holeNum++) {
+      const wolf = getWolfName(holeNum);
+      const wolfIdx = PLAYERS.indexOf(wolf);
+      const partner = PLAYERS[(wolfIdx + 1) % 4];
+      holes.push(parHole(holeNum, partner));
+    }
+
+    holes.push(
+      makeHole({
+        holeNum: 4,
+        wolf: 'Shane',
+        partner: 'Lance',
+        loneWolf: null,
+        grossScores: { Lance: 4, Cahlan: 2, Brad: 4, Shane: 4 },
+      }),
+    );
+
+    const game = buildGame(holes, { skinsEnabled: true, skinsValue: 5, skinsCarryover: true });
+    const skinsData = calculateSkins(game);
+
+    it('Cahlan should get 4 skins on H4 (3 carryover + 1)', () => {
+      expect(skinsData.skins['Cahlan']).toBe(4);
+    });
+
+    it('carryover should be 0 after H4 clears it', () => {
+      expect(skinsData.carryover).toBe(0);
+    });
+  });
+});
