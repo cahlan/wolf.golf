@@ -56,7 +56,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       supabase
         .from('games')
         .upsert({ id: game.id, state: game, updated_at: new Date().toISOString() })
-        .then();
+        .then(({ error }) => {
+          if (error) console.error('[game-provider] Failed to sync game to Supabase:', error.message);
+        });
     }
   }, [game, hydrated, isScorekeeper]);
 
