@@ -17,6 +17,7 @@ import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { StandingsView } from '@/components/game/standings-view';
 import { SkinsView } from '@/components/game/skins-view';
 import { LastHoleResult } from '@/components/game/last-hole-result';
+import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 
 export default function GamePage() {
   const router = useRouter();
@@ -375,26 +376,8 @@ function GameView({
                 </div>
               )}
 
-              {/* Quick standings */}
-              <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
-                <Label className="mb-2">
-                  STANDINGS{game.holes.length > 0 ? ` — ${game.holes.length} HOLES` : ''}
-                </Label>
-                {standings.map((s, i) => (
-                  <div
-                    key={s.name}
-                    className={`flex justify-between py-[5px]
-                      ${i > 0 ? 'border-t border-wolf-border' : ''}`}
-                  >
-                    <span className={`${i === 0 && s.points > 0 ? 'text-wolf-accent font-semibold' : 'text-wolf-text'}`}>
-                      {i === 0 && s.points > 0 ? '👑 ' : ''}{s.name}
-                    </span>
-                    <span className={`font-mono font-bold ${s.points > 0 ? 'text-wolf-accent' : 'text-wolf-text-muted'}`}>
-                      {s.points}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {/* Quick standings (with optional skins tab) */}
+              <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
 
               {/* Viewing a completed hole */}
               {currentHole <= game.holes.length && (
