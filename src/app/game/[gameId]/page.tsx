@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { supabase } from '@/lib/supabase/client';
@@ -24,10 +24,14 @@ export default function GamePage() {
   const gameId = params.gameId as string;
   const { game, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame } = useGame();
   const [fetchingRemote, setFetchingRemote] = useState(false);
+  const hasFetched = useRef(false);
 
   // If no game in context (e.g. page refresh as spectator), try fetching from Supabase
+  // Runs once on mount — `game` is deliberately excluded from deps to prevent re-fetch loops.
   useEffect(() => {
-    if (game || isScorekeeper) return;
+    if (hasFetched.current || isScorekeeper) return;
+    if (game) { hasFetched.current = true; return; }
+    hasFetched.current = true;
     let cancelled = false;
     setFetchingRemote(true);
     supabase
@@ -45,7 +49,8 @@ export default function GamePage() {
         setFetchingRemote(false);
       });
     return () => { cancelled = true; };
-  }, [gameId, game, isScorekeeper]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, isScorekeeper]);
 
   if (fetchingRemote) {
     return (

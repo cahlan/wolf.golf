@@ -66,10 +66,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     saveWeekendGames(weekendGames);
   }, [weekendGames, hydrated]);
 
-  // Realtime subscription for spectators
+  // Track game ID in a ref so the realtime channel isn't torn down on every game state update
+  const gameIdRef = useRef<string | undefined>(game?.id);
   useEffect(() => {
-    if (!isSpectator || !gameRef.current) return;
-    const gameId = gameRef.current.id;
+    if (game?.id) gameIdRef.current = game.id;
+  }, [game?.id]);
+
+  // Realtime subscription for spectators — only re-subscribe when isSpectator changes,
+  // not on every game state update (which would tear down & recreate the channel, causing flashes).
+  useEffect(() => {
+    if (!isSpectator || !gameIdRef.current) return;
+    const gameId = gameIdRef.current;
     const channel = supabase
       .channel(`game-${gameId}`)
       .on(
@@ -89,7 +96,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isSpectator, game?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSpectator]);
 
   const setGame = useCallback((g: Game | null) => {
     setGameState(g);
