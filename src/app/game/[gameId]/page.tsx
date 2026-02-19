@@ -17,6 +17,7 @@ import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { StandingsView } from '@/components/game/standings-view';
 import { SkinsView } from '@/components/game/skins-view';
 import { LastHoleResult } from '@/components/game/last-hole-result';
+import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 
 export default function GamePage() {
   const router = useRouter();
@@ -395,6 +396,9 @@ function GameView({
                   </div>
                 ))}
               </div>
+
+              {/* Inline Wolf / Skins toggle card */}
+              <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
 
               {/* Viewing a completed hole */}
               {currentHole <= game.holes.length && (
