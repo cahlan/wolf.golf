@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { Course, HoleInfo } from '@/lib/types/game';
 import { getAllStrokesForHole } from '@/lib/engine';
 import { createCourse } from '@/lib/engine';
@@ -14,11 +15,12 @@ interface WolfOrderStepProps {
   courseHoles: HoleInfo[];
   onBack: () => void;
   onStart: () => void;
+  advancedSlot?: ReactNode;
 }
 
 export function WolfOrderStep({
   players, handicaps, wolfOrder, setWolfOrder,
-  selectedCourse, courseHoles, onBack, onStart,
+  selectedCourse, courseHoles, onBack, onStart, advancedSlot,
 }: WolfOrderStepProps) {
   function moveOrder(from: number, to: number) {
     const n = [...wolfOrder];
@@ -121,6 +123,8 @@ export function WolfOrderStep({
           );
         })}
       </div>
+
+      {advancedSlot}
 
       <div className="flex gap-2.5 mt-6">
         <Button onClick={onBack} className="flex-1">

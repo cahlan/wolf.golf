@@ -9,6 +9,7 @@ import { BackButton } from '@/components/ui';
 import { PlayersStep } from '@/components/create/players-step';
 import { CourseStep } from '@/components/create/course-step';
 import { WolfOrderStep } from '@/components/create/wolf-order-step';
+import { AdvancedConfig } from '@/components/create/advanced-config';
 import type { Course, HoleInfo } from '@/lib/types/game';
 
 export default function CreateGamePage() {
@@ -23,6 +24,12 @@ export default function CreateGamePage() {
   const [skinsValue, setSkinsValue] = useState(5);
   const [wolfOrder, setWolfOrder] = useState([0, 1, 2, 3]);
   const [suggestions] = useState(() => getSuggestedPlayers());
+
+  // Advanced config state
+  const [lastPlaceWolf, setLastPlaceWolf] = useState(true);
+  const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(17);
+  const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('winner-takes-all');
+  const [skinsCarryover, setSkinsCarryover] = useState(true);
 
   // Course state
   const [savedCourses] = useState(() => loadSavedCourses());
@@ -87,6 +94,10 @@ export default function CreateGamePage() {
       skinsEnabled,
       skinsValue: skinsEnabled ? skinsValue : 0,
       course,
+      lastPlaceWolf,
+      lastPlaceWolfStartHole,
+      payoutStructure,
+      skinsCarryover,
     });
 
     setGame(g);
@@ -169,6 +180,20 @@ export default function CreateGamePage() {
           courseHoles={courseHoles}
           onBack={() => setStep(1)}
           onStart={handleStart}
+          advancedSlot={
+            <AdvancedConfig
+              buyIn={buyIn}
+              lastPlaceWolf={lastPlaceWolf}
+              lastPlaceWolfStartHole={lastPlaceWolfStartHole}
+              payoutStructure={payoutStructure}
+              skinsCarryover={skinsCarryover}
+              skinsEnabled={skinsEnabled}
+              onLastPlaceWolfChange={setLastPlaceWolf}
+              onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
+              onPayoutStructureChange={setPayoutStructure}
+              onSkinsCarryoverChange={setSkinsCarryover}
+            />
+          }
         />
       )}
     </div>

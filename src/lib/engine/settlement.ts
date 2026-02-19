@@ -8,10 +8,28 @@ export function calculateSettlement(game: Game): Settlement {
   const totalSkins = Object.values(skins).reduce((a, b) => a + b, 0);
 
   const wolfNet: Record<string, number> = {};
+  const structure = game.payoutStructure ?? 'winner-takes-all';
   standings.forEach((s, i) => {
-    if (i === 0) wolfNet[s.name] = game.buyIn * 2;
-    else if (i === 1) wolfNet[s.name] = 0;
-    else wolfNet[s.name] = -game.buyIn;
+    switch (structure) {
+      case 'top-two-split':
+        // 1st: +1.5×buyIn, 2nd: +0.5×buyIn, 3rd: -buyIn, 4th: -buyIn  (sum = 0)
+        if (i === 0) wolfNet[s.name] = game.buyIn * 1.5;
+        else if (i === 1) wolfNet[s.name] = game.buyIn * 0.5;
+        else wolfNet[s.name] = -game.buyIn;
+        break;
+      case 'top-three-split':
+        // 1st: +1×buyIn, 2nd: +0.5×buyIn, 3rd: +0.5×buyIn, 4th: -2×buyIn  (sum = 0)
+        if (i === 0) wolfNet[s.name] = game.buyIn;
+        else if (i === 1) wolfNet[s.name] = game.buyIn * 0.5;
+        else if (i === 2) wolfNet[s.name] = game.buyIn * 0.5;
+        else wolfNet[s.name] = -game.buyIn * 2;
+        break;
+      default: // 'winner-takes-all'
+        if (i === 0) wolfNet[s.name] = game.buyIn * 2;
+        else if (i === 1) wolfNet[s.name] = 0;
+        else wolfNet[s.name] = -game.buyIn;
+        break;
+    }
   });
 
   const skinsNet: Record<string, number> = {};

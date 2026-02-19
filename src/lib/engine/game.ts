@@ -21,5 +21,9 @@ export function createGame(params: CreateGameParams): Game {
     holes: [],
     status: 'active',
     weekendId: null,
+    lastPlaceWolf: params.lastPlaceWolf,
+    lastPlaceWolfStartHole: params.lastPlaceWolfStartHole,
+    payoutStructure: params.payoutStructure,
+    skinsCarryover: params.skinsCarryover,
   };
 }

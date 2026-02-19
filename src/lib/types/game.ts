@@ -41,6 +41,11 @@ export interface Game {
   holes: CompletedHole[];
   status: GameStatus;
   weekendId: string | null;
+  // Advanced config — all optional with defaults
+  lastPlaceWolf?: boolean;              // default: true
+  lastPlaceWolfStartHole?: number;      // default: 17
+  payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
+  skinsCarryover?: boolean;             // default: true
 }
 
 export interface HoleInput {
@@ -97,4 +102,9 @@ export interface CreateGameParams {
   skinsEnabled: boolean;
   skinsValue: number;
   course: Course;
+  // Advanced config — all optional with defaults
+  lastPlaceWolf?: boolean;
+  lastPlaceWolfStartHole?: number;
+  payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split';
+  skinsCarryover?: boolean;
 }
