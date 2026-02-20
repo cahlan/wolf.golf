@@ -45,12 +45,12 @@ export function HoleInputFlow({
     return parseInt(val) || holeInfo.par;
   }
 
-  const previewPoints = useMemo(() => {
+  const { previewPoints, matchupDetail } = useMemo(() => {
     const netScores: Record<string, number> = {};
     game.players.forEach(p => {
       netScores[p] = getEffectiveGross(p) - getPlayerStrokesOnHole(game, p, holeNum);
     });
-    return calculateHolePoints({
+    const completedHole = {
       ...holeInput,
       loneWolf: holeInput.loneWolf,
       players: game.players,
@@ -60,7 +60,11 @@ export function HoleInputFlow({
         game.players.map(p => [p, getEffectiveGross(p)])
       ),
       netScores,
-    });
+    };
+    return {
+      previewPoints: calculateHolePoints(completedHole),
+      matchupDetail: getHoleMatchupDetail(completedHole),
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holeInput, game, holeNum]);
 
@@ -146,6 +150,7 @@ export function HoleInputFlow({
         getEffectiveGross={getEffectiveGross}
         updateScore={updateScore}
         previewPoints={previewPoints}
+        matchupDetail={matchupDetail}
         onSubmit={onSubmit}
         holeNum={holeNum}
         wolf={wolf}
@@ -156,7 +161,7 @@ export function HoleInputFlow({
 
 function ScoresPhase({
   game, holeInput, setHoleInput, holeInfo, strokesThisHole,
-  getEffectiveGross, updateScore, previewPoints, onSubmit, holeNum, wolf,
+  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, holeNum, wolf,
 }: {
   game: Game;
   holeInput: HoleInput;
@@ -166,6 +171,7 @@ function ScoresPhase({
   getEffectiveGross: (player: string) => number;
   updateScore: (player: string, value: string) => void;
   previewPoints: Record<string, number>;
+  matchupDetail: ReturnType<typeof getHoleMatchupDetail>;
   onSubmit: () => void;
   holeNum: number;
   wolf: string;
@@ -230,23 +236,6 @@ function ScoresPhase({
     );
   }
 
-  // Compute matchup detail for preview
-  const netScores: Record<string, number> = {};
-  game.players.forEach(p => {
-    netScores[p] = getEffectiveGross(p) - getPlayerStrokesOnHole(game, p, holeNum);
-  });
-  const tempHole = {
-    ...holeInput,
-    players: game.players,
-    par: holeInfo.par,
-    strokeIndex: holeInfo.strokeIndex,
-    netScores,
-    grossScores: Object.fromEntries(
-      game.players.map(p => [p, getEffectiveGross(p)])
-    ),
-  };
-  const detail = getHoleMatchupDetail(tempHole);
-
   return (
     <Fade>
       {/* Wolf team */}
@@ -284,7 +273,7 @@ function ScoresPhase({
       <div className="bg-wolf-accent-bg rounded-[10px] border border-wolf-accent/20 p-3.5 mt-3">
         <Label className="text-wolf-accent mb-2">MATCHUP BREAKDOWN</Label>
 
-        {detail.lines.map((line, i) => (
+        {matchupDetail.lines.map((line, i) => (
           <div
             key={i}
             className={`flex items-center justify-between py-1.5
@@ -302,7 +291,7 @@ function ScoresPhase({
         ))}
 
         <div className="mt-2.5 pt-2.5 border-t border-wolf-accent/20 text-center text-sm font-bold text-wolf-text">
-          {detail.summary}
+          {matchupDetail.summary}
         </div>
 
         <div className="flex justify-around mt-2.5">
