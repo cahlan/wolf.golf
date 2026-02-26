@@ -57,6 +57,9 @@ function HomeContent() {
         <Button onClick={() => router.push('/join')} className="mt-2.5">
           Join Round
         </Button>
+        <Button onClick={() => router.push('/courses')} className="mt-2.5">
+          Manage Courses
+        </Button>
         {weekendGames.length > 0 && (
           <Button
             onClick={() => router.push('/weekend/current')}
