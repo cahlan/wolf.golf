@@ -26,6 +26,7 @@ export default function CreateGamePage() {
   const [suggestions] = useState(() => getSuggestedPlayers());
 
   // Advanced config state
+  const [startingHole, setStartingHole] = useState(1);
   const [lastPlaceWolf, setLastPlaceWolf] = useState(true);
   const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(17);
   const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('winner-takes-all');
@@ -94,6 +95,7 @@ export default function CreateGamePage() {
       skinsEnabled,
       skinsValue: skinsEnabled ? skinsValue : 0,
       course,
+      startingHole,
       lastPlaceWolf,
       lastPlaceWolfStartHole,
       payoutStructure,
@@ -183,11 +185,13 @@ export default function CreateGamePage() {
           advancedSlot={
             <AdvancedConfig
               buyIn={buyIn}
+              startingHole={startingHole}
               lastPlaceWolf={lastPlaceWolf}
               lastPlaceWolfStartHole={lastPlaceWolfStartHole}
               payoutStructure={payoutStructure}
               skinsCarryover={skinsCarryover}
               skinsEnabled={skinsEnabled}
+              onStartingHoleChange={setStartingHole}
               onLastPlaceWolfChange={setLastPlaceWolf}
               onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
               onPayoutStructureChange={setPayoutStructure}

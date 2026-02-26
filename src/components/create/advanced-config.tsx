@@ -5,11 +5,13 @@ import { Label } from '@/components/ui';
 
 interface AdvancedConfigProps {
   buyIn: number;
+  startingHole: number;
   lastPlaceWolf: boolean;
   lastPlaceWolfStartHole: number;
   payoutStructure: 'winner-takes-all' | 'top-two-split' | 'top-three-split';
   skinsCarryover: boolean;
   skinsEnabled: boolean;
+  onStartingHoleChange: (value: number) => void;
   onLastPlaceWolfChange: (value: boolean) => void;
   onLastPlaceWolfStartHoleChange: (value: number) => void;
   onPayoutStructureChange: (value: 'winner-takes-all' | 'top-two-split' | 'top-three-split') => void;
@@ -40,16 +42,19 @@ const PAYOUT_OPTIONS: {
 
 export function AdvancedConfig({
   buyIn,
+  startingHole,
   lastPlaceWolf,
   lastPlaceWolfStartHole,
   payoutStructure,
   skinsCarryover,
   skinsEnabled,
+  onStartingHoleChange,
   onLastPlaceWolfChange,
   onLastPlaceWolfStartHoleChange,
   onPayoutStructureChange,
   onSkinsCarryoverChange,
 }: AdvancedConfigProps) {
+  const totalHoles = 19 - startingHole;
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -67,6 +72,33 @@ export function AdvancedConfig({
 
       {expanded && (
         <div className="mt-3 space-y-4">
+          {/* Starting hole */}
+          <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+            <div className="text-left mb-2">
+              <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
+              <span className="text-wolf-text-muted text-[12px] font-body">
+                {startingHole === 1
+                  ? `Playing 18 holes`
+                  : `Playing ${totalHoles} holes (Hole ${startingHole} → 18)`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-[11px] shrink-0">START ON HOLE:</Label>
+              <input
+                type="number"
+                min={1}
+                max={18}
+                value={startingHole}
+                onChange={e => {
+                  const v = parseInt(e.target.value) || 1;
+                  onStartingHoleChange(Math.max(1, Math.min(18, v)));
+                }}
+                className="w-16 text-center font-mono bg-wolf-card border border-wolf-border rounded-lg
+                  py-2 px-1 text-wolf-text text-base outline-none"
+              />
+            </div>
+          </div>
+
           {/* Last place wolf */}
           <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
             <button

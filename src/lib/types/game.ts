@@ -42,6 +42,7 @@ export interface Game {
   status: GameStatus;
   weekendId: string | null;
   // Advanced config — all optional with defaults
+  startingHole?: number;                // default: 1
   lastPlaceWolf?: boolean;              // default: true
   lastPlaceWolfStartHole?: number;      // default: 17
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
@@ -103,6 +104,7 @@ export interface CreateGameParams {
   skinsValue: number;
   course: Course;
   // Advanced config — all optional with defaults
+  startingHole?: number;
   lastPlaceWolf?: boolean;
   lastPlaceWolfStartHole?: number;
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split';

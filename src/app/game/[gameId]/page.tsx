@@ -97,7 +97,8 @@ function GameView({
   leaveSpectator: () => void;
 }) {
   const router = useRouter();
-  const [currentHole, setCurrentHole] = useState(() => game.holes.length + 1);
+  const startHole = game.startingHole ?? 1;
+  const [currentHole, setCurrentHole] = useState(() => startHole + game.holes.length);
   const [tab, setTab] = useState<'play' | 'standings' | 'skins'>('play');
   const [holeInput, setHoleInput] = useState<HoleInput | null>(null);
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
@@ -106,9 +107,9 @@ function GameView({
   // Keep spectators on the latest hole as scores come in
   useEffect(() => {
     if (isSpectator) {
-      setCurrentHole(game.holes.length + 1);
+      setCurrentHole(startHole + game.holes.length);
     }
-  }, [isSpectator, game.holes.length]);
+  }, [isSpectator, game.holes.length, startHole]);
 
   const activeHoleNum = editingHoleNum || currentHole;
 
@@ -119,7 +120,7 @@ function GameView({
   const holeInfo = activeHoleNum <= 18 ? game.course.holes[activeHoleNum - 1] : null;
   const strokesThisHole = activeHoleNum <= 18 ? getAllStrokesForHole(game, activeHoleNum) : {};
 
-  const startHole = useCallback(() => {
+  const beginHole = useCallback(() => {
     const gs: Record<string, string> = {};
     game.players.forEach(p => (gs[p] = ''));
     setEditingHoleNum(null);
@@ -285,17 +286,17 @@ function GameView({
               {/* Hole navigation */}
               <div className="flex items-center justify-between mb-3">
                 <button
-                  onClick={() => setCurrentHole(h => Math.max(1, h - 1))}
-                  disabled={currentHole <= 1}
+                  onClick={() => setCurrentHole(h => Math.max(startHole, h - 1))}
+                  disabled={currentHole <= startHole}
                   className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${currentHole <= 1 ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
+                    font-mono text-[13px] ${currentHole <= startHole ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
                 >
-                  &larr; {currentHole > 1 ? currentHole - 1 : ''}
+                  &larr; {currentHole > startHole ? currentHole - 1 : ''}
                 </button>
 
                 <div className="text-center">
                   <div className="text-xs text-wolf-text-muted font-mono mb-0.5">
-                    {currentHole <= game.holes.length ? 'COMPLETED' : currentHole <= 18 ? 'NEXT UP' : 'DONE'}
+                    {game.holes.some(h => h.holeNum === currentHole) ? 'COMPLETED' : currentHole <= 18 ? 'NEXT UP' : 'DONE'}
                   </div>
                   <div className="text-[44px] font-extrabold font-display tracking-[-3px]">
                     {currentHole <= 18 ? currentHole : '✓'}
@@ -310,10 +311,10 @@ function GameView({
                 </div>
 
                 <button
-                  onClick={() => setCurrentHole(h => Math.min(game.holes.length + 1, Math.min(19, h + 1)))}
-                  disabled={currentHole > 18 || currentHole > game.holes.length}
+                  onClick={() => setCurrentHole(h => Math.min(startHole + game.holes.length, Math.min(19, h + 1)))}
+                  disabled={currentHole > 18 || currentHole > game.holes.length + startHole - 1}
                   className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${(currentHole > 18 || currentHole > game.holes.length)
+                    font-mono text-[13px] ${(currentHole > 18 || currentHole > game.holes.length + startHole - 1)
                       ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
                 >
                   {currentHole < 18 ? currentHole + 1 : ''} &rarr;
@@ -326,7 +327,7 @@ function GameView({
                   rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
                   <span className="text-lg">🐺</span>
                   <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
-                  {currentHole >= 17 && (
+                  {currentHole >= (game.lastPlaceWolfStartHole ?? 17) && (
                     <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
                       LAST PLACE
                     </span>
@@ -380,9 +381,9 @@ function GameView({
               <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
 
               {/* Viewing a completed hole */}
-              {currentHole <= game.holes.length && (
+              {game.holes.some(h => h.holeNum === currentHole) && (
                 <div className="mb-4">
-                  <LastHoleResult hole={game.holes[currentHole - 1]} />
+                  <LastHoleResult hole={game.holes.find(h => h.holeNum === currentHole)!} />
                   {isScorekeeper && (
                     <Button onClick={() => editHole(currentHole)} className="mt-2">
                       ✎ Edit Hole {currentHole}
@@ -392,12 +393,12 @@ function GameView({
               )}
 
               {/* Score next hole button */}
-              {isScorekeeper && currentHole === game.holes.length + 1 && currentHole <= 18 && (
-                <Button variant="primary" onClick={startHole}>
+              {isScorekeeper && currentHole === startHole + game.holes.length && currentHole <= 18 && (
+                <Button variant="primary" onClick={beginHole}>
                   Score Hole {currentHole}
                 </Button>
               )}
-              {game.holes.length >= 18 && (
+              {game.holes.length >= (19 - startHole) && (
                 <Button variant="primary" onClick={() => handleComplete()} className="mt-2">
                   View Settlement &rarr;
                 </Button>
