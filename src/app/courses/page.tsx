@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Course, HoleInfo } from '@/lib/types/game';
 import { loadSavedCourses, saveCourse, deleteCourse } from '@/lib/storage/local';
+import { fetchCoursesFromSupabase, upsertCourseToSupabase, deleteCourseFromSupabase } from '@/lib/supabase/courses';
 import { createCourse } from '@/lib/engine/course';
 import { BackButton, Button, Fade, Label, Title, Sub } from '@/components/ui';
 import { CourseEditor } from '@/components/course/course-editor';
@@ -19,13 +20,26 @@ function validateStrokeIndexes(holes: HoleInfo[]): boolean {
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Course | 'new' | null>(null);
   const [courseName, setCourseName] = useState('');
   const [courseHoles, setCourseHoles] = useState<HoleInfo[]>(EMPTY_HOLES);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const refreshCourses = useCallback(() => {
-    setCourses(loadSavedCourses());
+  const refreshCourses = useCallback(async () => {
+    try {
+      const supabaseCourses = await fetchCoursesFromSupabase();
+      // Update local cache with Supabase data
+      for (const c of supabaseCourses) {
+        saveCourse(c);
+      }
+      setCourses(supabaseCourses);
+    } catch {
+      // Silent fallback to local
+      setCourses(loadSavedCourses());
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -50,17 +64,19 @@ export default function CoursesPage() {
     setConfirmDelete(null);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!canSave) return;
     const course = createCourse(courseName.trim(), courseHoles);
     saveCourse(course);
-    refreshCourses();
+    upsertCourseToSupabase(course).catch(() => {});
+    await refreshCourses();
     setEditing(null);
   }
 
-  function handleDelete(name: string) {
+  async function handleDelete(name: string) {
     deleteCourse(name);
-    refreshCourses();
+    deleteCourseFromSupabase(name).catch(() => {});
+    await refreshCourses();
     setConfirmDelete(null);
     if (editing && typeof editing !== 'string' && editing.name === name) {
       setEditing(null);
@@ -68,6 +84,19 @@ export default function CoursesPage() {
   }
 
   const totalPar = (holes: HoleInfo[]) => holes.reduce((s, h) => s + h.par, 0);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="px-5 pt-14 pb-10">
+        <Fade>
+          <BackButton href="/" />
+          <Title>Courses</Title>
+          <Sub>Loading courses…</Sub>
+        </Fade>
+      </div>
+    );
+  }
 
   // Editor view
   if (editing !== null) {
