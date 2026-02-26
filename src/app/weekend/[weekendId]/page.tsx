@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
-import { calculateWeekendStandings, calculateStandings } from '@/lib/engine';
+import { calculateWeekendStandings, calculateStandings, WEEKEND_PLACEMENT_POINTS } from '@/lib/engine';
 import { BackButton, Button, Fade, Label, BottomSheet } from '@/components/ui';
 
 export default function WeekendPage() {
@@ -83,7 +83,7 @@ export default function WeekendPage() {
                     >
                       <span>{i + 1}. {s.name}</span>
                       <span className="font-mono">
-                        {s.points > 0 ? '+' : ''}{s.points} pts &rarr; {[4, 3, 2, 1][i]} wknd
+                        {s.points > 0 ? '+' : ''}{s.points} pts &rarr; {WEEKEND_PLACEMENT_POINTS[i] ?? 0} wknd
                       </span>
                     </div>
                   ))}

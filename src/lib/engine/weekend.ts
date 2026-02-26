@@ -1,5 +1,6 @@
 import type { Game, Standing } from '../types/game';
 import { calculateStandings } from './standings';
+import { WEEKEND_PLACEMENT_POINTS } from './constants';
 
 export function calculateWeekendStandings(games: Game[]): Standing[] {
   const weekendPoints: Record<string, number> = {};
@@ -8,7 +9,7 @@ export function calculateWeekendStandings(games: Game[]): Standing[] {
     const standings = calculateStandings(game);
     standings.forEach((s, i) => {
       if (!weekendPoints[s.name]) weekendPoints[s.name] = 0;
-      weekendPoints[s.name] += [4, 3, 2, 1][i] || 0;
+      weekendPoints[s.name] += WEEKEND_PLACEMENT_POINTS[i] ?? 0;
     });
   });
 
