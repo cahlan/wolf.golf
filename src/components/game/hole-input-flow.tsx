@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { Game, HoleInput, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole, calculateHolePoints, getHoleMatchupDetail } from '@/lib/engine';
+import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
 import { Button, Fade, Label } from '@/components/ui';
 
 interface HoleInputFlowProps {
@@ -45,12 +46,12 @@ export function HoleInputFlow({
     return parseInt(val) || holeInfo.par;
   }
 
-  const previewPoints = useMemo(() => {
+  const { previewPoints, matchupDetail } = useMemo(() => {
     const netScores: Record<string, number> = {};
     game.players.forEach(p => {
       netScores[p] = getEffectiveGross(p) - getPlayerStrokesOnHole(game, p, holeNum);
     });
-    return calculateHolePoints({
+    const completedHole = {
       ...holeInput,
       loneWolf: holeInput.loneWolf,
       players: game.players,
@@ -60,7 +61,11 @@ export function HoleInputFlow({
         game.players.map(p => [p, getEffectiveGross(p)])
       ),
       netScores,
-    });
+    };
+    return {
+      previewPoints: calculateHolePoints(completedHole),
+      matchupDetail: getHoleMatchupDetail(completedHole),
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holeInput, game, holeNum]);
 
@@ -106,9 +111,9 @@ export function HoleInputFlow({
 
           <Label className="mt-5">GO LONE WOLF 🐺</Label>
           {([
-            { type: 'early' as const, label: 'Lone Before Drives', pts: 4, desc: 'Before anyone hits' },
-            { type: 'late' as const, label: 'Lone After Drives', pts: 3, desc: 'After others hit, before wolf' },
-            { type: 'default' as const, label: 'Default Lone', pts: 2, desc: "Didn't pick anyone" },
+            { type: 'early' as const, label: 'Lone Before Drives', pts: LONE_WOLF_POINTS.early, desc: 'Before anyone hits' },
+            { type: 'late' as const, label: 'Lone After Drives', pts: LONE_WOLF_POINTS.late, desc: 'After others hit, before wolf' },
+            { type: 'default' as const, label: 'Default Lone', pts: LONE_WOLF_POINTS.default, desc: "Didn't pick anyone" },
           ]).map(opt => (
             <button
               key={opt.type}
@@ -146,6 +151,7 @@ export function HoleInputFlow({
         getEffectiveGross={getEffectiveGross}
         updateScore={updateScore}
         previewPoints={previewPoints}
+        matchupDetail={matchupDetail}
         onSubmit={onSubmit}
         holeNum={holeNum}
         wolf={wolf}
@@ -156,7 +162,7 @@ export function HoleInputFlow({
 
 function ScoresPhase({
   game, holeInput, setHoleInput, holeInfo, strokesThisHole,
-  getEffectiveGross, updateScore, previewPoints, onSubmit, holeNum, wolf,
+  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, holeNum, wolf,
 }: {
   game: Game;
   holeInput: HoleInput;
@@ -166,6 +172,7 @@ function ScoresPhase({
   getEffectiveGross: (player: string) => number;
   updateScore: (player: string, value: string) => void;
   previewPoints: Record<string, number>;
+  matchupDetail: ReturnType<typeof getHoleMatchupDetail>;
   onSubmit: () => void;
   holeNum: number;
   wolf: string;
@@ -230,23 +237,6 @@ function ScoresPhase({
     );
   }
 
-  // Compute matchup detail for preview
-  const netScores: Record<string, number> = {};
-  game.players.forEach(p => {
-    netScores[p] = getEffectiveGross(p) - getPlayerStrokesOnHole(game, p, holeNum);
-  });
-  const tempHole = {
-    ...holeInput,
-    players: game.players,
-    par: holeInfo.par,
-    strokeIndex: holeInfo.strokeIndex,
-    netScores,
-    grossScores: Object.fromEntries(
-      game.players.map(p => [p, getEffectiveGross(p)])
-    ),
-  };
-  const detail = getHoleMatchupDetail(tempHole);
-
   return (
     <Fade>
       {/* Wolf team */}
@@ -257,7 +247,7 @@ function ScoresPhase({
           </div>
           {isLone && (
             <span className="text-[11px] font-mono text-wolf-orange bg-wolf-orange/10 py-0.5 px-2 rounded">
-              +{({ early: 4, late: 3, default: 2 })[holeInput.loneWolf!]} to win
+              +{LONE_WOLF_POINTS[holeInput.loneWolf!]} to win
             </span>
           )}
         </div>
@@ -284,7 +274,7 @@ function ScoresPhase({
       <div className="bg-wolf-accent-bg rounded-[10px] border border-wolf-accent/20 p-3.5 mt-3">
         <Label className="text-wolf-accent mb-2">MATCHUP BREAKDOWN</Label>
 
-        {detail.lines.map((line, i) => (
+        {matchupDetail.lines.map((line, i) => (
           <div
             key={i}
             className={`flex items-center justify-between py-1.5
@@ -302,7 +292,7 @@ function ScoresPhase({
         ))}
 
         <div className="mt-2.5 pt-2.5 border-t border-wolf-accent/20 text-center text-sm font-bold text-wolf-text">
-          {detail.summary}
+          {matchupDetail.summary}
         </div>
 
         <div className="flex justify-around mt-2.5">

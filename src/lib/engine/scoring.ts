@@ -1,4 +1,5 @@
 import type { CompletedHole } from '../types/game';
+import { LONE_WOLF_POINTS } from './constants';
 
 export function calculateHolePoints(hole: CompletedHole): Record<string, number> {
   const points: Record<string, number> = {};
@@ -33,8 +34,7 @@ export function calculateLoneWolfPoints(hole: CompletedHole): Record<string, num
   const bestOther = Math.min(...others.map((p) => hole.netScores[p]));
 
   if (wolfScore < bestOther) {
-    const loneValues = { early: 4, late: 3, default: 2 };
-    points[wolfName] = loneValues[hole.loneWolf!];
+    points[wolfName] = LONE_WOLF_POINTS[hole.loneWolf!];
   } else if (wolfScore > bestOther) {
     others.forEach((p) => (points[p] = 1));
   }

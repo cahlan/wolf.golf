@@ -1,3 +1,4 @@
+export { LONE_WOLF_POINTS, WEEKEND_PLACEMENT_POINTS } from './constants';
 export { generateCode, createGame } from './game';
 export { createCourse } from './course';
 export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';
@@ -8,4 +9,3 @@ export { calculateStandings } from './standings';
 export { calculateSkins } from './skins';
 export { calculateSettlement, simplifyDebts } from './settlement';
 export { calculateWeekendStandings } from './weekend';
-export { LONE_WOLF_POINTS, WEEKEND_PLACEMENT_POINTS } from './constants';

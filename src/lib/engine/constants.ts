@@ -1,10 +1,10 @@
 import type { LoneWolfType } from '../types/game';
 
 /**
- * Points awarded to the wolf per lone-wolf declaration type.
- * 'early'  — declared before anyone tees off (+4)
- * 'late'   — declared after others hit, before wolf tees (+3)
- * 'default'— wolf didn't pick a partner (+2)
+ * Points awarded to the wolf for a winning lone-wolf hole.
+ * - early: declared before anyone tees off (+4)
+ * - late: declared after others hit, before wolf tees (+3)
+ * - default: no partner was picked (+2)
  */
 export const LONE_WOLF_POINTS: Record<LoneWolfType, number> = {
   early: 4,

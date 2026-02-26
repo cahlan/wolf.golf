@@ -1,4 +1,5 @@
 import type { CompletedHole, HoleMatchupDetail } from '../types/game';
+import { LONE_WOLF_POINTS } from './constants';
 
 export function getHoleMatchupDetail(hole: CompletedHole): HoleMatchupDetail {
   if (hole.loneWolf !== null) {
@@ -7,13 +8,12 @@ export function getHoleMatchupDetail(hole: CompletedHole): HoleMatchupDetail {
     const wolfScore = hole.netScores[wolfName];
     const bestOther = Math.min(...others.map(p => hole.netScores[p]));
     const bestOtherName = others.find(p => hole.netScores[p] === bestOther)!;
-    const loneValues = { early: 4, late: 3, default: 2 };
-
     if (wolfScore < bestOther) {
+      const pts = LONE_WOLF_POINTS[hole.loneWolf!];
       return {
         type: 'lone',
-        lines: [{ label: `${wolfName} (${wolfScore}) beats the field (${bestOther})`, result: 'wolf', pts: `+${loneValues[hole.loneWolf!]}` }],
-        summary: `Wolf wins +${loneValues[hole.loneWolf!]}`,
+        lines: [{ label: `${wolfName} (${wolfScore}) beats the field (${bestOther})`, result: 'wolf', pts: `+${pts}` }],
+        summary: `Wolf wins +${pts}`,
       };
     } else if (wolfScore > bestOther) {
       return {
