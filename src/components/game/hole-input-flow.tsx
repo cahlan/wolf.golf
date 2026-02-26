@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { Game, HoleInput, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole, calculateHolePoints, getHoleMatchupDetail } from '@/lib/engine';
+import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
 import { Button, Fade, Label } from '@/components/ui';
 
 interface HoleInputFlowProps {
@@ -106,9 +107,9 @@ export function HoleInputFlow({
 
           <Label className="mt-5">GO LONE WOLF 🐺</Label>
           {([
-            { type: 'early' as const, label: 'Lone Before Drives', pts: 4, desc: 'Before anyone hits' },
-            { type: 'late' as const, label: 'Lone After Drives', pts: 3, desc: 'After others hit, before wolf' },
-            { type: 'default' as const, label: 'Default Lone', pts: 2, desc: "Didn't pick anyone" },
+            { type: 'early' as const, label: 'Lone Before Drives', pts: LONE_WOLF_POINTS.early, desc: 'Before anyone hits' },
+            { type: 'late' as const, label: 'Lone After Drives', pts: LONE_WOLF_POINTS.late, desc: 'After others hit, before wolf' },
+            { type: 'default' as const, label: 'Default Lone', pts: LONE_WOLF_POINTS.default, desc: "Didn't pick anyone" },
           ]).map(opt => (
             <button
               key={opt.type}
@@ -257,7 +258,7 @@ function ScoresPhase({
           </div>
           {isLone && (
             <span className="text-[11px] font-mono text-wolf-orange bg-wolf-orange/10 py-0.5 px-2 rounded">
-              +{({ early: 4, late: 3, default: 2 })[holeInput.loneWolf!]} to win
+              +{LONE_WOLF_POINTS[holeInput.loneWolf!]} to win
             </span>
           )}
         </div>
