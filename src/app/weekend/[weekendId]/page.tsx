@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { calculateWeekendStandings, calculateStandings } from '@/lib/engine';
-import { BackButton, Fade, Label } from '@/components/ui';
+import { BackButton, Button, Fade, Label, BottomSheet } from '@/components/ui';
 
 export default function WeekendPage() {
   const router = useRouter();
-  const { weekendGames } = useGame();
+  const { weekendGames, resetWeekend } = useGame();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const weekendStandings = calculateWeekendStandings(weekendGames);
 
@@ -90,6 +92,33 @@ export default function WeekendPage() {
             })}
           </div>
         )}
+        {weekendGames.length > 0 && (
+          <div className="mt-8">
+            <Button onClick={() => setShowResetConfirm(true)}>
+              Start Fresh Weekend
+            </Button>
+          </div>
+        )}
+
+        <BottomSheet open={showResetConfirm} onClose={() => setShowResetConfirm(false)}>
+          <div className="text-lg font-bold mb-2">Start fresh?</div>
+          <p className="text-wolf-text-sec text-sm mt-0 mb-5">
+            This will clear all games from this weekend. Are you sure?
+          </p>
+          <Button variant="primary" onClick={() => setShowResetConfirm(false)}>
+            Keep Weekend
+          </Button>
+          <button
+            onClick={() => {
+              setShowResetConfirm(false);
+              resetWeekend();
+              router.push('/');
+            }}
+            className="w-full py-2.5 bg-transparent border-none text-wolf-red text-[13px] cursor-pointer mt-2"
+          >
+            Clear all games and start fresh
+          </button>
+        </BottomSheet>
       </Fade>
     </div>
   );

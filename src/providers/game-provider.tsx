@@ -25,6 +25,7 @@ interface GameContextValue {
   leaveSpectator: () => void;
   completeRound: (gameOverride?: Game) => void;
   abandonGame: () => void;
+  resetWeekend: () => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -142,6 +143,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setHasActiveGame(false);
   }, []);
 
+  const resetWeekend = useCallback(() => {
+    setWeekendGames([]);
+    // saveWeekendGames([]) will be called by the existing effect
+  }, []);
+
   return (
     <GameContext.Provider value={{
       game,
@@ -157,6 +163,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       leaveSpectator,
       completeRound,
       abandonGame,
+      resetWeekend,
     }}>
       {children}
     </GameContext.Provider>
