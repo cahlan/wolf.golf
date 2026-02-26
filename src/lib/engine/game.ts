@@ -21,6 +21,7 @@ export function createGame(params: CreateGameParams): Game {
     holes: [],
     status: 'active',
     weekendId: null,
+    startingHole: params.startingHole,
     lastPlaceWolf: params.lastPlaceWolf,
     lastPlaceWolfStartHole: params.lastPlaceWolfStartHole,
     payoutStructure: params.payoutStructure,
