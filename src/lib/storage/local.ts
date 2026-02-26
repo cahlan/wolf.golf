@@ -47,6 +47,11 @@ export function saveCourse(course: Course): void {
   localStorage.setItem('wolf_courses', JSON.stringify(courses));
 }
 
+export function deleteCourse(name: string): void {
+  const courses = loadSavedCourses().filter(c => c.name !== name);
+  localStorage.setItem('wolf_courses', JSON.stringify(courses));
+}
+
 // ============================================================================
 // GAME PERSISTENCE
 // ============================================================================
