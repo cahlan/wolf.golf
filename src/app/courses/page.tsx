@@ -69,14 +69,22 @@ export default function CoursesPage() {
     const course = createCourse(courseName.trim(), courseHoles);
     saveCourse(course);
     upsertCourseToSupabase(course).catch(() => {});
-    await refreshCourses();
+    setCourses(prev => {
+      const idx = prev.findIndex(c => c.name === course.name);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = course;
+        return updated;
+      }
+      return [...prev, course];
+    });
     setEditing(null);
   }
 
   async function handleDelete(name: string) {
     deleteCourse(name);
     deleteCourseFromSupabase(name).catch(() => {});
-    await refreshCourses();
+    setCourses(prev => prev.filter(c => c.name !== name));
     setConfirmDelete(null);
     if (editing && typeof editing !== 'string' && editing.name === name) {
       setEditing(null);
