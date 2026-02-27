@@ -1,7 +1,7 @@
 'use client';
 
 import type { Game, Standing } from '@/lib/types/game';
-import { calculateHolePoints } from '@/lib/engine';
+import { calculateGameHolePoints } from '@/lib/engine';
 import { Fade, Label, Title } from '@/components/ui';
 
 interface StandingsViewProps {
@@ -10,9 +10,10 @@ interface StandingsViewProps {
 }
 
 export function StandingsView({ game, standings }: StandingsViewProps) {
+  const isSix = (game.gameType ?? 'wolf') === 'six';
   return (
     <Fade>
-      <Title>Wolf Standings</Title>
+      <Title>{isSix ? '6x6x6 Standings' : 'Wolf Standings'}</Title>
       {standings.map((s, i) => (
         <div
           key={s.name}
@@ -51,7 +52,7 @@ export function StandingsView({ game, standings }: StandingsViewProps) {
               </thead>
               <tbody>
                 {game.holes.map(hole => {
-                  const pts = calculateHolePoints(hole);
+                  const pts = calculateGameHolePoints(game, hole);
                   return (
                     <tr key={hole.holeNum} className="border-t border-wolf-border">
                       <td className="py-1.5 px-2.5 text-wolf-text-muted">{hole.holeNum}</td>

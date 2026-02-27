@@ -11,6 +11,8 @@ interface StandingsToggleCardProps {
 }
 
 export function StandingsToggleCard({ game, standings, skinsData }: StandingsToggleCardProps) {
+  const isSix = (game.gameType ?? 'wolf') === 'six';
+  const gameLabel = isSix ? '6x6x6' : 'Wolf';
   const [tab, setTab] = useState<'wolf' | 'skins'>('wolf');
   const skinsEnabled = game.skinsEnabled !== false;
 
@@ -60,7 +62,7 @@ export function StandingsToggleCard({ game, standings, skinsData }: StandingsTog
                   ? 'bg-wolf-accent text-wolf-bg font-bold'
                   : 'bg-transparent text-wolf-text-muted hover:text-wolf-text'}`}
             >
-              Wolf
+              {gameLabel}
             </button>
             <button
               onClick={() => setTab('skins')}

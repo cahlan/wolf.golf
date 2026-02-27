@@ -148,7 +148,7 @@ export default function SettlementPage() {
         </div>
 
         {/* Net totals */}
-        <Label className="mb-2">NET TOTAL{game.skinsEnabled !== false ? ' (WOLF + SKINS)' : ''}</Label>
+        <Label className="mb-2">NET TOTAL{game.skinsEnabled !== false ? ` (${(game.gameType ?? 'wolf') === 'six' ? 'GAME' : 'WOLF'} + SKINS)` : ''}</Label>
         {game.players.map(p => {
           const net = settlement.totalNet[p];
           return (

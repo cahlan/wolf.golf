@@ -10,14 +10,18 @@ import {
   getWolfForHole,
   getAllStrokesForHole,
   getPlayerStrokesOnHole,
+  getTeamsForHole,
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
+import { getSegmentForHole } from '@/lib/engine/six';
 import { Button, Fade, Label, BottomSheet } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
+import { SixHoleInput } from '@/components/game/six-hole-input';
 import { StandingsView } from '@/components/game/standings-view';
 import { SkinsView } from '@/components/game/skins-view';
 import { HoleResultDetail } from '@/components/game/hole-result-detail';
+import { SixHoleResultDetail } from '@/components/game/six-hole-result';
 import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 
 export default function GamePage() {
@@ -170,9 +174,9 @@ function GameView({
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
-  // Clear pending wolf decision when hole changes
+  // Clear pending wolf decision when hole changes (wolf only)
   useEffect(() => {
-    if (isScorekeeper && game.pendingWolfDecision) {
+    if (!isSix && isScorekeeper && game.pendingWolfDecision) {
       setGame({ ...game, pendingWolfDecision: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,13 +190,23 @@ function GameView({
   }, [isSpectator, game.holes.length, startHole]);
 
   const activeHoleNum = editingHoleNum || currentHole;
+  const isSix = (game.gameType ?? 'wolf') === 'six';
 
   const standings = useMemo(() => calculateStandings(game), [game]);
   const skinsData = useMemo(() => calculateSkins(game), [game]);
-  const wolfIdx = activeHoleNum <= 18 ? getWolfForHole(game, activeHoleNum) : 0;
+  const wolfIdx = !isSix && activeHoleNum <= 18 ? getWolfForHole(game, activeHoleNum) : 0;
   const wolfName = game.players[wolfIdx];
   const holeInfo = activeHoleNum <= 18 ? game.course.holes[activeHoleNum - 1] : null;
   const strokesThisHole = activeHoleNum <= 18 ? getAllStrokesForHole(game, activeHoleNum) : {};
+
+  // 6x6x6: current teams for the active hole
+  const sixTeams = useMemo(() => {
+    if (!isSix || activeHoleNum > 18) return null;
+    return getTeamsForHole(game, activeHoleNum);
+  }, [isSix, game, activeHoleNum]);
+
+  // 6x6x6: gross scores state (separate from wolf's HoleInput)
+  const [sixGrossScores, setSixGrossScores] = useState<Record<string, string>>({});
 
   // Sync wolf decision to game state so spectators see it in real-time
   const handleWolfDecision = useCallback((partner: string | null, loneWolf: LoneWolfType | null) => {
@@ -224,53 +238,83 @@ function GameView({
     const gs: Record<string, string> = {};
     game.players.forEach(p => (gs[p] = ''));
     setEditingHoleNum(null);
-    setHoleInput({
-      holeNum: currentHole,
-      wolf: wolfName,
-      partner: null,
-      loneWolf: null,
-      grossScores: gs,
-      phase: 'wolf-decision',
-    });
-  }, [game.players, currentHole, wolfName]);
+
+    if (isSix) {
+      // 6x6x6: no wolf decision, go straight to scores
+      setSixGrossScores(gs);
+      setHoleInput({
+        holeNum: currentHole,
+        wolf: sixTeams?.teamA[0] ?? game.players[0],
+        partner: sixTeams?.teamA[1] ?? game.players[1],
+        loneWolf: null,
+        grossScores: gs,
+        phase: 'scores',
+      });
+    } else {
+      setHoleInput({
+        holeNum: currentHole,
+        wolf: wolfName,
+        partner: null,
+        loneWolf: null,
+        grossScores: gs,
+        phase: 'wolf-decision',
+      });
+    }
+  }, [game.players, currentHole, wolfName, isSix, sixTeams]);
 
   const editHole = useCallback((holeNum: number) => {
     const existingHole = game.holes.find(h => h.holeNum === holeNum);
     if (!existingHole) return;
     setEditingHoleNum(holeNum);
+    const gs = Object.fromEntries(
+      Object.entries(existingHole.grossScores).map(([k, v]) => [k, String(v)])
+    );
+    if (isSix) {
+      setSixGrossScores(gs);
+    }
     setHoleInput({
       holeNum,
       wolf: existingHole.wolf,
       partner: existingHole.partner,
       loneWolf: existingHole.loneWolf,
-      grossScores: Object.fromEntries(
-        Object.entries(existingHole.grossScores).map(([k, v]) => [k, String(v)])
-      ),
+      grossScores: gs,
       phase: 'scores',
     });
-  }, [game.holes]);
+  }, [game.holes, isSix]);
 
   function submitHole() {
     if (!holeInput) return;
     const hNum = holeInput.holeNum;
     const hi = game.course.holes[hNum - 1];
 
+    // For 6x6x6, use sixGrossScores; for wolf, use holeInput.grossScores
+    const scoresSource = isSix ? sixGrossScores : holeInput.grossScores;
+
     const grossScores: Record<string, number> = {};
     const netScores: Record<string, number> = {};
     game.players.forEach(p => {
-      const val = holeInput.grossScores[p];
+      const val = scoresSource[p];
       const gross = (val === '' || val === undefined) ? hi.par : (parseInt(val) || hi.par);
       grossScores[p] = gross;
       netScores[p] = gross - getPlayerStrokesOnHole(game, p, hNum);
     });
 
+    // For 6x6x6: set wolf/partner from team assignments
+    let holeWolf = holeInput.wolf;
+    let holePartner = holeInput.partner;
+    if (isSix) {
+      const teams = getTeamsForHole(game, hNum);
+      holeWolf = teams.teamA[0];
+      holePartner = teams.teamA[1];
+    }
+
     const newHole = {
       holeNum: hNum,
       par: hi.par,
       strokeIndex: hi.strokeIndex,
-      wolf: holeInput.wolf,
-      partner: holeInput.partner,
-      loneWolf: holeInput.loneWolf,
+      wolf: holeWolf,
+      partner: holePartner,
+      loneWolf: isSix ? null : holeInput.loneWolf,
       players: game.players,
       grossScores,
       netScores,
@@ -444,13 +488,93 @@ function GameView({
               {/* Viewing a completed hole — show just the result detail */}
               {game.holes.some(h => h.holeNum === currentHole) ? (
                 <div className="mb-4">
-                  <HoleResultDetail game={game} hole={game.holes.find(h => h.holeNum === currentHole)!} />
+                  {isSix ? (
+                    <SixHoleResultDetail game={game} hole={game.holes.find(h => h.holeNum === currentHole)!} />
+                  ) : (
+                    <HoleResultDetail game={game} hole={game.holes.find(h => h.holeNum === currentHole)!} />
+                  )}
                   {isScorekeeper && (
                     <Button onClick={() => editHole(currentHole)} className="mt-2">
                       ✎ Edit Hole {currentHole}
                     </Button>
                   )}
                 </div>
+              ) : isSix ? (
+                <>
+                  {/* 6x6x6: Team matchup card */}
+                  {currentHole <= 18 && sixTeams && (
+                    <>
+                      <div className="text-center mb-3">
+                        <span className="text-[11px] font-mono text-wolf-accent tracking-[1.5px]">
+                          HOLES {getSegmentForHole(currentHole) * 6 + 1}–{(getSegmentForHole(currentHole) + 1) * 6}
+                        </span>
+                      </div>
+
+                      <div className="bg-wolf-accent-bg rounded-xl border border-wolf-accent/20 p-3.5 mb-3">
+                        <div className="text-xs font-mono text-wolf-accent font-semibold tracking-[1.5px] mb-2">
+                          TEAM A
+                        </div>
+                        {sixTeams.teamA.map(p => {
+                          const strokes = strokesThisHole[p] || 0;
+                          return (
+                            <div key={p} className="flex items-center justify-between py-[5px]">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[15px] text-wolf-text font-medium">{p}</span>
+                                <span className="text-[11px] text-wolf-text-muted font-mono">({game.handicaps[p]} HC)</span>
+                              </div>
+                              {strokes > 0 && (
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: strokes }, (_, i) => (
+                                    <div key={i} className="w-2 h-2 rounded-full bg-wolf-accent" />
+                                  ))}
+                                  <span className="font-mono text-xs font-bold text-wolf-accent ml-0.5">
+                                    {strokes > 1 ? `${strokes}` : '1'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="text-center py-1 mb-3 relative">
+                        <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
+                        <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
+                          VS
+                        </span>
+                      </div>
+
+                      <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
+                        <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-2">
+                          TEAM B
+                        </div>
+                        {sixTeams.teamB.map(p => {
+                          const strokes = strokesThisHole[p] || 0;
+                          return (
+                            <div key={p} className="flex items-center justify-between py-[5px]">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[15px] text-wolf-text font-medium">{p}</span>
+                                <span className="text-[11px] text-wolf-text-muted font-mono">({game.handicaps[p]} HC)</span>
+                              </div>
+                              {strokes > 0 && (
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: strokes }, (_, i) => (
+                                    <div key={i} className="w-2 h-2 rounded-full bg-wolf-accent" />
+                                  ))}
+                                  <span className="font-mono text-xs font-bold text-wolf-accent ml-0.5">
+                                    {strokes > 1 ? `${strokes}` : '1'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
+                </>
               ) : (
                 <>
                   {/* Spectator: pending wolf decision — show ScoresPhase-style team layout */}
@@ -630,16 +754,31 @@ function GameView({
                   </button>
                 </div>
               )}
-              <HoleInputFlow
-                game={game}
-                holeInput={holeInput}
-                setHoleInput={setHoleInput}
-                onSubmit={submitHole}
-                onCancel={() => { setHoleInput(null); setEditingHoleNum(null); }}
-                onWolfDecision={handleWolfDecision}
-                strokesThisHole={editingHoleNum ? getAllStrokesForHole(game, editingHoleNum) : strokesThisHole}
-                holeInfo={(editingHoleNum ? game.course.holes[editingHoleNum - 1] : holeInfo)!}
-              />
+              {isSix && sixTeams ? (
+                <SixHoleInput
+                  game={game}
+                  holeNum={activeHoleNum}
+                  teamA={sixTeams.teamA}
+                  teamB={sixTeams.teamB}
+                  grossScores={sixGrossScores}
+                  setGrossScores={setSixGrossScores}
+                  strokesThisHole={editingHoleNum ? getAllStrokesForHole(game, editingHoleNum) : strokesThisHole}
+                  holeInfo={(editingHoleNum ? game.course.holes[editingHoleNum - 1] : holeInfo)!}
+                  onSubmit={submitHole}
+                  onCancel={() => { setHoleInput(null); setEditingHoleNum(null); }}
+                />
+              ) : (
+                <HoleInputFlow
+                  game={game}
+                  holeInput={holeInput}
+                  setHoleInput={setHoleInput}
+                  onSubmit={submitHole}
+                  onCancel={() => { setHoleInput(null); setEditingHoleNum(null); }}
+                  onWolfDecision={handleWolfDecision}
+                  strokesThisHole={editingHoleNum ? getAllStrokesForHole(game, editingHoleNum) : strokesThisHole}
+                  holeInfo={(editingHoleNum ? game.course.holes[editingHoleNum - 1] : holeInfo)!}
+                />
+              )}
             </>
           )}
         </div>

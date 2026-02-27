@@ -4,8 +4,17 @@ export { createCourse } from './course';
 export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';
 export { getWolfForHole } from './wolf';
 export { calculateHolePoints, calculateLoneWolfPoints } from './scoring';
+export { calculateGameHolePoints } from './scoring-utils';
 export { getHoleMatchupDetail } from './matchup';
 export { calculateStandings } from './standings';
 export { calculateSkins } from './skins';
 export { calculateSettlement, simplifyDebts } from './settlement';
 export { calculateWeekendStandings } from './weekend';
+export {
+  getSegmentForHole,
+  getTeamsForHole,
+  calculateSixHolePoints,
+  getSixHoleMatchupDetail,
+  generateDefaultSegments,
+  shuffleSegments,
+} from './six';

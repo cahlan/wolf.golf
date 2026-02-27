@@ -10,8 +10,10 @@ import { BackButton } from '@/components/ui';
 import { PlayersStep } from '@/components/create/players-step';
 import { CourseStep } from '@/components/create/course-step';
 import { WolfOrderStep } from '@/components/create/wolf-order-step';
+import { TeamRotationStep } from '@/components/create/team-rotation-step';
 import { AdvancedConfig } from '@/components/create/advanced-config';
-import type { Course, HoleInfo } from '@/lib/types/game';
+import { generateDefaultSegments } from '@/lib/engine';
+import type { Course, HoleInfo, GameType } from '@/lib/types/game';
 
 export default function CreateGamePage() {
   const router = useRouter();
@@ -24,6 +26,8 @@ export default function CreateGamePage() {
   const [skinsEnabled, setSkinsEnabled] = useState(true);
   const [skinsValue, setSkinsValue] = useState(5);
   const [wolfOrder, setWolfOrder] = useState([0, 1, 2, 3]);
+  const [gameType, setGameType] = useState<GameType>('wolf');
+  const [teamSegments, setTeamSegments] = useState<[number, number][]>(() => generateDefaultSegments());
   const [suggestions] = useState(() => getSuggestedPlayers());
 
   // Advanced config state
@@ -102,16 +106,18 @@ export default function CreateGamePage() {
     upsertCourseToSupabase(course).catch(() => {});
 
     const g = createGame({
+      gameType,
       players: players.map(p => p.trim()),
       buyIn,
       handicaps: hcaps,
-      wolfOrder,
+      wolfOrder: gameType === 'wolf' ? wolfOrder : undefined,
       skinsEnabled,
       skinsValue: skinsEnabled ? skinsValue : 0,
       course,
-      startingHole,
-      lastPlaceWolf,
-      lastPlaceWolfStartHole,
+      teamSegments: gameType === 'six' ? teamSegments : undefined,
+      startingHole: gameType === 'wolf' ? startingHole : undefined,
+      lastPlaceWolf: gameType === 'wolf' ? lastPlaceWolf : undefined,
+      lastPlaceWolfStartHole: gameType === 'wolf' ? lastPlaceWolfStartHole : undefined,
       payoutStructure,
       skinsCarryover,
     });
@@ -135,7 +141,7 @@ export default function CreateGamePage() {
 
       {/* Step indicators */}
       <div className="flex gap-1 mb-5 justify-center">
-        {['Players', 'Course', 'Wolf Order'].map((label, i) => (
+        {['Players', 'Course', gameType === 'wolf' ? 'Wolf Order' : 'Teams'].map((label, i) => (
           <div key={i} className="flex items-center gap-1">
             <div
               className={`w-2 h-2 rounded-full transition-colors duration-200
@@ -150,6 +156,35 @@ export default function CreateGamePage() {
         ))}
       </div>
 
+      {step === 0 && (
+        <>
+        {/* Game type selector */}
+        <div className="flex gap-2.5 mb-5">
+          {([
+            { type: 'wolf' as const, label: 'Wolf', emoji: '🐺' },
+            { type: 'six' as const, label: '6x6x6', emoji: '🤝' },
+          ]).map(opt => (
+            <button
+              key={opt.type}
+              onClick={() => setGameType(opt.type)}
+              className={`flex-1 py-3 px-4 rounded-xl border-2 text-center cursor-pointer
+                transition-colors duration-150
+                ${gameType === opt.type
+                  ? 'border-wolf-accent bg-wolf-accent-bg'
+                  : 'border-wolf-border bg-wolf-card'}`}
+            >
+              <div className="text-2xl mb-1">{opt.emoji}</div>
+              <div className={`text-sm font-semibold ${gameType === opt.type ? 'text-wolf-accent' : 'text-wolf-text'}`}>
+                {opt.label}
+              </div>
+              <div className="text-[11px] text-wolf-text-muted mt-0.5">
+                {opt.type === 'wolf' ? 'Pick your partner each hole' : 'Fixed 2v2, rotating every 6'}
+              </div>
+            </button>
+          ))}
+        </div>
+        </>
+      )}
       {step === 0 && (
         <PlayersStep
           players={players}
@@ -183,10 +218,11 @@ export default function CreateGamePage() {
           strokeIndexesValid={strokeIndexesValid}
           onBack={() => setStep(0)}
           onNext={handleCourseNext}
+          nextLabel={gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
         />
       )}
 
-      {step === 2 && (
+      {step === 2 && gameType === 'wolf' && (
         <WolfOrderStep
           players={players}
           handicaps={handicaps}
@@ -198,6 +234,37 @@ export default function CreateGamePage() {
           onStart={handleStart}
           advancedSlot={
             <AdvancedConfig
+              gameType={gameType}
+              buyIn={buyIn}
+              startingHole={startingHole}
+              lastPlaceWolf={lastPlaceWolf}
+              lastPlaceWolfStartHole={lastPlaceWolfStartHole}
+              payoutStructure={payoutStructure}
+              skinsCarryover={skinsCarryover}
+              skinsEnabled={skinsEnabled}
+              onStartingHoleChange={setStartingHole}
+              onLastPlaceWolfChange={setLastPlaceWolf}
+              onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
+              onPayoutStructureChange={setPayoutStructure}
+              onSkinsCarryoverChange={setSkinsCarryover}
+            />
+          }
+        />
+      )}
+
+      {step === 2 && gameType === 'six' && (
+        <TeamRotationStep
+          players={players}
+          handicaps={handicaps}
+          teamSegments={teamSegments}
+          setTeamSegments={setTeamSegments}
+          selectedCourse={selectedCourse}
+          courseHoles={courseHoles}
+          onBack={() => setStep(1)}
+          onStart={handleStart}
+          advancedSlot={
+            <AdvancedConfig
+              gameType={gameType}
               buyIn={buyIn}
               startingHole={startingHole}
               lastPlaceWolf={lastPlaceWolf}

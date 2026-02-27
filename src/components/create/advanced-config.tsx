@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import type { GameType } from '@/lib/types/game';
 import { Button, Label } from '@/components/ui';
 
 interface AdvancedConfigProps {
+  gameType?: GameType;
   buyIn: number;
   startingHole: number;
   lastPlaceWolf: boolean;
@@ -41,6 +43,7 @@ const PAYOUT_OPTIONS: {
 ];
 
 export function AdvancedConfig({
+  gameType = 'wolf',
   buyIn,
   startingHole,
   lastPlaceWolf,
@@ -54,6 +57,7 @@ export function AdvancedConfig({
   onPayoutStructureChange,
   onSkinsCarryoverChange,
 }: AdvancedConfigProps) {
+  const isWolf = gameType === 'wolf';
   const totalHoles = 19 - startingHole;
   const [expanded, setExpanded] = useState(false);
 
@@ -72,8 +76,8 @@ export function AdvancedConfig({
 
       {expanded && (
         <div className="mt-3 space-y-4">
-          {/* Starting hole */}
-          <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+          {/* Starting hole — wolf only */}
+          {isWolf && <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
             <div className="text-left mb-2">
               <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
               <span className="text-wolf-text-muted text-[12px] font-body">
@@ -104,10 +108,10 @@ export function AdvancedConfig({
                 </Button>
               </div>
             </div>
-          </div>
+          </div>}
 
-          {/* Last place wolf */}
-          <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+          {/* Last place wolf — wolf only */}
+          {isWolf && <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
             <button
               onClick={() => onLastPlaceWolfChange(!lastPlaceWolf)}
               className="flex items-center justify-between w-full cursor-pointer bg-transparent border-none p-0"
@@ -148,7 +152,7 @@ export function AdvancedConfig({
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Payout structure */}
           <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
