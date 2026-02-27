@@ -23,6 +23,7 @@ import { SkinsView } from '@/components/game/skins-view';
 import { HoleResultDetail } from '@/components/game/hole-result-detail';
 import { SixHoleResultDetail } from '@/components/game/six-hole-result';
 import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
+import { ScorecardSheet } from '@/components/game/scorecard-sheet';
 
 export default function GamePage() {
   const router = useRouter();
@@ -170,6 +171,7 @@ function GameView({
   const [currentHole, setCurrentHole] = useState(() => startHole + game.holes.length);
   const [tab, setTab] = useState<'play' | 'standings' | 'skins'>('play');
   const [copied, setCopied] = useState(false);
+  const [showScorecard, setShowScorecard] = useState(false);
   const [holeInput, setHoleInput] = useState<HoleInput | null>(null);
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
@@ -372,6 +374,15 @@ function GameView({
             {game.course.name.toUpperCase()} &middot; {game.id}
           </div>
           <button
+            onClick={() => setShowScorecard(true)}
+            className="bg-transparent border border-wolf-border rounded px-1.5 py-0.5 text-[11px]
+              font-mono text-wolf-text-muted cursor-pointer hover:border-wolf-accent hover:text-wolf-accent
+              transition-colors"
+            title="Scorecard (gross/net by hole)"
+          >
+            ⛳
+          </button>
+          <button
             onClick={() => {
               const url = `${window.location.origin}/join?code=${game.id}`;
               navigator.clipboard.writeText(url).then(() => {
@@ -386,6 +397,7 @@ function GameView({
           >
             {copied ? '✓ Copied' : '📋'}
           </button>
+          <ScorecardSheet game={game} open={showScorecard} onClose={() => setShowScorecard(false)} />
           {isSpectator && (
             <span className="text-[10px] font-mono bg-wolf-card border border-wolf-border text-wolf-text-muted py-0.5 px-1.5 rounded">
               SPECTATING
