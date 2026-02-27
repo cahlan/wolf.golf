@@ -24,7 +24,7 @@ function HomeContent() {
 
   const handleResume = () => {
     const game = resumeGame();
-    if (game) router.push(`/game/${game.id}`);
+    if (game) router.push(`/game/${game.id}?keeper=1`);
   };
 
   return (
