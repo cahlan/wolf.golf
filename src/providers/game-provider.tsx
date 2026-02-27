@@ -12,6 +12,7 @@ import {
   loadSpectatorGameId,
   clearSpectatorGameId,
 } from '@/lib/storage/local';
+import { getLatestWeekendId, getWeekendRounds, appendWeekendRound, removeWeekendRound, resetWeekend as resetWeekendRemote } from '@/lib/supabase/weekends';
 import { supabase } from '@/lib/supabase/client';
 
 interface GameContextValue {
@@ -50,13 +51,47 @@ export function GameProvider({ children }: { children: ReactNode }) {
     gameRef.current = game;
   }, [game]);
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage + weekend rounds from Supabase on mount
   useEffect(() => {
     const active = loadActiveGame();
     setHasActiveGame(!!active);
-    setWeekendGames(loadWeekendGames());
+
     const savedSpectatorId = loadSpectatorGameId();
     setSpectatorGameId(savedSpectatorId);
+
+    // Start with local weekend while we fetch shared weekend
+    setWeekendGames(loadWeekendGames());
+
+    (async () => {
+      try {
+        const weekendId = await getLatestWeekendId();
+        const roundIds = await getWeekendRounds(weekendId);
+
+        if (!roundIds.length) {
+          setWeekendGames([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('games')
+          .select('state')
+          .in('id', roundIds);
+
+        if (error) throw error;
+
+        const games = (data ?? [])
+          .map((row: any) => row.state as Game)
+          .filter(Boolean);
+
+        // Preserve weekend order (Supabase IN doesn't guarantee order)
+        const byId = new Map(games.map(g => [g.id, g]));
+        const ordered = roundIds.map(id => byId.get(id)).filter(Boolean) as Game[];
+        setWeekendGames(ordered);
+      } catch (e) {
+        console.error('[game-provider] Failed to hydrate weekend from Supabase:', e);
+      }
+    })();
+
     setHydrated(true);
   }, []);
 
@@ -75,7 +110,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [game, hydrated, isScorekeeper]);
 
-  // Auto-save weekend whenever it changes
+  // Auto-save weekend whenever it changes (local cache)
   useEffect(() => {
     if (!hydrated) return;
     saveWeekendGames(weekendGames);
@@ -121,9 +156,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const completedGame = { ...source, status: 'complete' as const };
     setGameState(completedGame);
     setWeekendGames(prev => [...prev, completedGame]);
+
+    // Append to shared weekend (scorekeeper only)
+    if (isScorekeeper) {
+      (async () => {
+        try {
+          const weekendId = await getLatestWeekendId();
+          await appendWeekendRound(weekendId, completedGame.id);
+        } catch (e) {
+          console.error('[game-provider] Failed to append round to weekend:', e);
+        }
+      })();
+    }
+
     clearActiveGame();
     setHasActiveGame(false);
-  }, []);
+  }, [isScorekeeper]);
 
   const abandonGame = useCallback(() => {
     clearActiveGame();
@@ -134,12 +182,35 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const resetWeekend = useCallback(() => {
     setWeekendGames([]);
+
+    if (isScorekeeper) {
+      (async () => {
+        try {
+          const weekendId = await getLatestWeekendId();
+          await resetWeekendRemote(weekendId);
+        } catch (e) {
+          console.error('[game-provider] Failed to reset weekend in Supabase:', e);
+        }
+      })();
+    }
+
     // saveWeekendGames([]) will be called by the existing effect
-  }, []);
+  }, [isScorekeeper]);
 
   const removeWeekendGame = useCallback((gameId: string) => {
     setWeekendGames(prev => prev.filter(g => g.id !== gameId));
-  }, []);
+
+    if (isScorekeeper) {
+      (async () => {
+        try {
+          const weekendId = await getLatestWeekendId();
+          await removeWeekendRound(weekendId, gameId);
+        } catch (e) {
+          console.error('[game-provider] Failed to remove round from weekend in Supabase:', e);
+        }
+      })();
+    }
+  }, [isScorekeeper]);
 
   const updateWeekendGame = useCallback((updatedGame: Game) => {
     setWeekendGames(prev => prev.map(g => (g.id === updatedGame.id ? updatedGame : g)));
