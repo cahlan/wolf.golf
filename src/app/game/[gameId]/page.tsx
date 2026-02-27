@@ -26,6 +26,7 @@ export default function GamePage() {
   const { game, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame } = useGame();
   const [fetchingRemote, setFetchingRemote] = useState(false);
   const hasFetched = useRef(false);
+  const [watcherCount, setWatcherCount] = useState(0);
 
   // If no game in context (e.g. page refresh as spectator), try fetching from Supabase
   // Runs once on mount — `game` is deliberately excluded from deps to prevent re-fetch loops.
@@ -53,6 +54,30 @@ export default function GamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, isScorekeeper]);
 
+  // Supabase Realtime presence — track how many clients are viewing this game
+  useEffect(() => {
+    if (!game) return;
+    const channel = supabase.channel(`presence-game-${gameId}`, {
+      config: { presence: { key: crypto.randomUUID() } },
+    });
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const count = Object.keys(channel.presenceState()).length;
+        setWatcherCount(count);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ joined_at: Date.now() });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, game?.id]);
+
   if (fetchingRemote) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -75,6 +100,7 @@ export default function GamePage() {
       completeRound={completeRound}
       abandonGame={abandonGame}
       leaveSpectator={leaveSpectator}
+      watcherCount={watcherCount}
     />
   );
 }
@@ -87,6 +113,7 @@ function GameView({
   completeRound,
   abandonGame,
   leaveSpectator,
+  watcherCount,
 }: {
   game: Game;
   setGame: (g: Game | null) => void;
@@ -95,6 +122,7 @@ function GameView({
   completeRound: (gameOverride?: Game) => void;
   abandonGame: () => void;
   leaveSpectator: () => void;
+  watcherCount: number;
 }) {
   const router = useRouter();
   const startHole = game.startingHole ?? 1;
@@ -230,6 +258,11 @@ function GameView({
           {isSpectator && (
             <span className="text-[10px] font-mono bg-wolf-card border border-wolf-border text-wolf-text-muted py-0.5 px-1.5 rounded">
               SPECTATING
+            </span>
+          )}
+          {watcherCount > 1 && (
+            <span className="text-[10px] font-mono text-wolf-text-muted py-0.5 px-1.5">
+              👀 {watcherCount}
             </span>
           )}
         </div>
