@@ -60,18 +60,27 @@ export default function GamePage() {
   useEffect(() => {
     if (isScorekeeper) return; // scorekeeper doesn't need this
 
+    console.log('[realtime] Setting up subscription for game:', gameId);
+
     const channel = supabase
       .channel(`game-spectator-${gameId}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
         (payload) => {
+          console.log('[realtime] Received UPDATE payload:', payload);
           const newState = (payload.new as { state: Game }).state;
-          setLocalGame(newState);
-          setGame(newState); // keep context in sync
+          if (newState) {
+            setLocalGame(newState);
+            setGame(newState); // keep context in sync
+          } else {
+            console.warn('[realtime] payload.new.state was undefined — check REPLICA IDENTITY FULL');
+          }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log('[realtime] Subscription status:', status, err ?? '');
+      });
 
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
