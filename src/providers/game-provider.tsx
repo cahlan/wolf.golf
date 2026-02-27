@@ -30,6 +30,7 @@ interface GameContextValue {
   completeRound: (gameOverride?: Game) => void;
   abandonGame: () => void;
   resetWeekend: () => void;
+  removeWeekendGame: (gameId: string) => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -43,7 +44,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [hasActiveGame, setHasActiveGame] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const gameRef = useRef(game);
-  gameRef.current = game;
+
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -132,6 +136,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // saveWeekendGames([]) will be called by the existing effect
   }, []);
 
+  const removeWeekendGame = useCallback((gameId: string) => {
+    setWeekendGames(prev => prev.filter(g => g.id !== gameId));
+  }, []);
+
   return (
     <GameContext.Provider value={{
       game,
@@ -149,6 +157,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       completeRound,
       abandonGame,
       resetWeekend,
+      removeWeekendGame,
     }}>
       {children}
     </GameContext.Provider>
