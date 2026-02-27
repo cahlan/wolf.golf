@@ -75,11 +75,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (game?.id) gameIdRef.current = game.id;
   }, [game?.id]);
 
-  // Realtime subscription for spectators — only re-subscribe when isSpectator changes,
-  // not on every game state update (which would tear down & recreate the channel, causing flashes).
+  // Track the currently-subscribed game ID to avoid re-subscribing on every render
+  const subscribedGameIdRef = useRef<string | undefined>(undefined);
+
+  // Realtime subscription for spectators.
+  // Requires Supabase replication enabled on the `games` table
+  // (Supabase dashboard → Database → Replication → enable the games table).
+  //
+  // Uses game?.id in deps so the subscription is created as soon as the game is
+  // loaded, even if gameIdRef hasn't been populated yet on the same render cycle.
+  // subscribedGameIdRef prevents tearing down & recreating the channel when game
+  // state updates (which change game but not game.id).
   useEffect(() => {
-    if (!isSpectator || !gameIdRef.current) return;
-    const gameId = gameIdRef.current;
+    if (!isSpectator) {
+      // Clean up if no longer spectating
+      if (subscribedGameIdRef.current) {
+        supabase.removeChannel(supabase.channel(`game-${subscribedGameIdRef.current}`));
+        subscribedGameIdRef.current = undefined;
+      }
+      return;
+    }
+
+    const gameId = game?.id ?? gameIdRef.current;
+    if (!gameId || gameId === subscribedGameIdRef.current) return; // already subscribed
+
+    subscribedGameIdRef.current = gameId;
+
     const channel = supabase
       .channel(`game-${gameId}`)
       .on(
@@ -96,11 +117,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         },
       )
       .subscribe();
+
     return () => {
+      subscribedGameIdRef.current = undefined;
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSpectator]);
+  }, [isSpectator, game?.id]);
 
   const setGame = useCallback((g: Game | null) => {
     setGameState(g);
