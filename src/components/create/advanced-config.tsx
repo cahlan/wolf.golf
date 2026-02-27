@@ -82,20 +82,27 @@ export function AdvancedConfig({
                   : `Playing ${totalHoles} holes (Hole ${startingHole} → 18)`}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Label className="text-[11px] shrink-0">START ON HOLE:</Label>
-              <input
-                type="number"
-                min={1}
-                max={18}
-                value={startingHole}
-                onChange={e => {
-                  const v = parseInt(e.target.value) || 1;
-                  onStartingHoleChange(Math.max(1, Math.min(18, v)));
-                }}
-                className="w-16 text-center font-mono bg-wolf-card border border-wolf-border rounded-lg
-                  py-2 px-1 text-wolf-text text-base outline-none"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="score"
+                  disabled={startingHole <= 1}
+                  onClick={() => onStartingHoleChange(Math.max(1, startingHole - 1))}
+                >
+                  −
+                </Button>
+                <span className="w-8 text-center text-wolf-text text-base font-mono">
+                  {startingHole}
+                </span>
+                <Button
+                  variant="score"
+                  disabled={startingHole >= 18}
+                  onClick={() => onStartingHoleChange(Math.min(18, startingHole + 1))}
+                >
+                  +
+                </Button>
+              </div>
             </div>
           </div>
 
