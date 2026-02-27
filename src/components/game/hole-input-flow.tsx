@@ -195,10 +195,10 @@ function ScoresPhase({
     return (
       <div key={p} className="flex items-center gap-1.5 mb-2">
         <div className="flex-1 min-w-0">
-          <div className={`text-[15px] flex items-center gap-1
+          <div className={`text-base flex items-center gap-1
             ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-            {isWolf && <span className="text-[13px]">🐺</span>}
             {p}
+            {isWolf && <span className="text-[13px]">🐺</span>}
             {strokes > 0 && (
               <span className="inline-flex gap-0.5 ml-0.5">
                 {Array.from({ length: strokes }, (_, i) => (

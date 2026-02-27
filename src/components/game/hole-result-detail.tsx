@@ -26,10 +26,10 @@ export function HoleResultDetail({ game, hole }: { game: Game; hole: CompletedHo
           ${idx > 0 ? 'border-t border-wolf-orange/10' : ''}`}
       >
         <div className="flex items-center gap-1.5">
-          <span className={`text-[15px] ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-            {isWolf && <span className="text-[13px] mr-1">🐺</span>}
+          <span className={`text-base ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
             {p}
           </span>
+          {isWolf && <span className="text-[13px]">🐺</span>}
           {strokes > 0 && (
             <span className="inline-flex gap-0.5 ml-0.5">
               {Array.from({ length: strokes }, (_, i) => (
@@ -60,7 +60,7 @@ export function HoleResultDetail({ game, hole }: { game: Game; hole: CompletedHo
           ${idx > 0 ? 'border-t border-wolf-border' : ''}`}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-[15px] text-wolf-text">{p}</span>
+          <span className="text-base text-wolf-text">{p}</span>
           {strokes > 0 && (
             <span className="inline-flex gap-0.5 ml-0.5">
               {Array.from({ length: strokes }, (_, i) => (
