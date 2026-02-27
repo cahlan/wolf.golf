@@ -76,61 +76,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     saveWeekendGames(weekendGames);
   }, [weekendGames, hydrated]);
 
-  // Track game ID in a ref so the realtime channel isn't torn down on every game state update
-  const gameIdRef = useRef<string | undefined>(game?.id);
-  useEffect(() => {
-    if (game?.id) gameIdRef.current = game.id;
-  }, [game?.id]);
-
-  // Track the currently-subscribed game ID to avoid re-subscribing on every render
-  const subscribedGameIdRef = useRef<string | undefined>(undefined);
-
-  // Realtime subscription for spectators.
-  // Requires Supabase replication enabled on the `games` table
-  // (Supabase dashboard → Database → Replication → enable the games table).
-  //
-  // Uses game?.id in deps so the subscription is created as soon as the game is
-  // loaded, even if gameIdRef hasn't been populated yet on the same render cycle.
-  // subscribedGameIdRef prevents tearing down & recreating the channel when game
-  // state updates (which change game but not game.id).
-  useEffect(() => {
-    if (!isSpectator) {
-      // Clean up if no longer spectating
-      if (subscribedGameIdRef.current) {
-        supabase.removeChannel(supabase.channel(`game-${subscribedGameIdRef.current}`));
-        subscribedGameIdRef.current = undefined;
-      }
-      return;
-    }
-
-    const gameId = game?.id ?? gameIdRef.current;
-    if (!gameId || gameId === subscribedGameIdRef.current) return; // already subscribed
-
-    subscribedGameIdRef.current = gameId;
-
-    const channel = supabase
-      .channel(`game-${gameId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'games',
-          filter: `id=eq.${gameId}`,
-        },
-        (payload) => {
-          const newState = (payload.new as { state: Game }).state;
-          setGameState(newState);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      subscribedGameIdRef.current = undefined;
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSpectator, game?.id]);
+  // Spectator realtime subscription is now handled directly in GamePage
+  // (src/app/game/[gameId]/page.tsx) so it survives page refreshes without
+  // depending on isSpectator context state.
 
   const setGame = useCallback((g: Game | null) => {
     setGameState(g);
