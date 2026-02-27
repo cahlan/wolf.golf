@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { createGame, createCourse } from '@/lib/engine';
 import { loadSavedCourses, saveCourse, getSuggestedHandicap, getSuggestedPlayers, savePlayerCache } from '@/lib/storage/local';
+import { fetchCoursesFromSupabase, upsertCourseToSupabase } from '@/lib/supabase/courses';
 import { BackButton } from '@/components/ui';
 import { PlayersStep } from '@/components/create/players-step';
 import { CourseStep } from '@/components/create/course-step';
@@ -33,8 +34,20 @@ export default function CreateGamePage() {
   const [skinsCarryover, setSkinsCarryover] = useState(true);
 
   // Course state
-  const [savedCourses] = useState(() => loadSavedCourses());
+  const [savedCourses, setSavedCourses] = useState<Course[]>(() => loadSavedCourses());
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+  // Fetch courses from Supabase on mount
+  useEffect(() => {
+    fetchCoursesFromSupabase()
+      .then(courses => {
+        for (const c of courses) saveCourse(c);
+        setSavedCourses(courses);
+      })
+      .catch(() => {
+        // Silent fallback — local courses already loaded
+      });
+  }, []);
   const [courseName, setCourseName] = useState('');
   const [courseHoles, setCourseHoles] = useState<HoleInfo[]>(
     Array.from({ length: 18 }, () => ({ par: 4 as const, strokeIndex: 0 }))
@@ -86,6 +99,7 @@ export default function CreateGamePage() {
       course = createCourse(courseName.trim(), courseHoles);
     }
     saveCourse(course);
+    upsertCourseToSupabase(course).catch(() => {});
 
     const g = createGame({
       players: players.map(p => p.trim()),
