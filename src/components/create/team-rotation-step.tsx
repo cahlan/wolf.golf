@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Course, HoleInfo } from '@/lib/types/game';
 import { getAllStrokesForHole } from '@/lib/engine';
 import { createCourse } from '@/lib/engine';
@@ -25,6 +25,8 @@ export function TeamRotationStep({
   players, handicaps, teamSegments, setTeamSegments,
   selectedCourse, courseHoles, onBack, onStart, advancedSlot,
 }: TeamRotationStepProps) {
+  const [shuffleKey, setShuffleKey] = useState(0);
+
   function shuffle() {
     const shuffled = [...teamSegments];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -32,6 +34,7 @@ export function TeamRotationStep({
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     setTeamSegments(shuffled);
+    setShuffleKey(k => k + 1);
   }
 
   function swapInSegment(segIdx: number) {
@@ -69,7 +72,8 @@ export function TeamRotationStep({
 
         return (
           <button
-            key={segIdx}
+            key={`${shuffleKey}-${segIdx}`}
+            style={shuffleKey > 0 ? { animation: `shuffleIn 250ms ease-out ${segIdx * 50}ms both` } : undefined}
             onClick={() => swapInSegment(segIdx)}
             className="w-full mb-2.5 bg-wolf-card border border-wolf-border rounded-[10px]
               p-3.5 cursor-pointer text-left"
@@ -151,7 +155,7 @@ export function TeamRotationStep({
           &larr; Back
         </Button>
         <Button variant="primary" onClick={onStart} className="flex-[2]">
-          Start Round 🎲
+          Start Round 🤝
         </Button>
       </div>
     </Fade>

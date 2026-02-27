@@ -162,7 +162,7 @@ export default function CreateGamePage() {
         <div className="flex gap-2.5 mb-5">
           {([
             { type: 'wolf' as const, label: 'Wolf', emoji: '🐺' },
-            { type: 'six' as const, label: '6x6x6', emoji: '🎲' },
+            { type: 'six' as const, label: '6x6x6', emoji: '🤝' },
           ]).map(opt => (
             <button
               key={opt.type}
@@ -218,6 +218,7 @@ export default function CreateGamePage() {
           strokeIndexesValid={strokeIndexesValid}
           onBack={() => setStep(0)}
           onNext={handleCourseNext}
+          nextLabel={gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
         />
       )}
 

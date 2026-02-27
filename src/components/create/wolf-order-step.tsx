@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Course, HoleInfo } from '@/lib/types/game';
 import { getAllStrokesForHole } from '@/lib/engine';
 import { createCourse } from '@/lib/engine';
@@ -22,6 +22,8 @@ export function WolfOrderStep({
   players, handicaps, wolfOrder, setWolfOrder,
   selectedCourse, courseHoles, onBack, onStart, advancedSlot,
 }: WolfOrderStepProps) {
+  const [shuffleKey, setShuffleKey] = useState(0);
+
   function moveOrder(from: number, to: number) {
     const n = [...wolfOrder];
     const [item] = n.splice(from, 1);
@@ -36,6 +38,7 @@ export function WolfOrderStep({
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     setWolfOrder(shuffled);
+    setShuffleKey(k => k + 1);
   }
 
   return (
@@ -55,7 +58,8 @@ export function WolfOrderStep({
 
       {wolfOrder.map((pIdx, pos) => (
         <div
-          key={pIdx}
+          key={`${shuffleKey}-${pIdx}`}
+          style={shuffleKey > 0 ? { animation: `shuffleIn 250ms ease-out ${pos * 50}ms both` } : undefined}
           className="flex items-center gap-2.5 mb-2 bg-wolf-card border border-wolf-border
             rounded-[10px] py-3 px-3.5"
         >

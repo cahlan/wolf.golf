@@ -18,13 +18,14 @@ interface CourseStepProps {
   strokeIndexesValid: boolean;
   onBack: () => void;
   onNext: () => void;
+  nextLabel?: string;
 }
 
 export function CourseStep({
   savedCourses, selectedCourse, setSelectedCourse,
   courseName, setCourseName, courseHoles, setCourseHoles,
   courseMode, setCourseMode, courseValid, strokeIndexesValid,
-  onBack, onNext,
+  onBack, onNext, nextLabel = 'Next: Wolf Order',
 }: CourseStepProps) {
   return (
     <Fade>
@@ -89,7 +90,7 @@ export function CourseStep({
           onClick={onNext}
           className="flex-[2]"
         >
-          Next: Wolf Order &rarr;
+          {nextLabel} &rarr;
         </Button>
       </div>
     </Fade>
