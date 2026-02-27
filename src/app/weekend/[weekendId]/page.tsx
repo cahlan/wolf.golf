@@ -72,8 +72,11 @@ export default function WeekendPage() {
                   key={gi}
                   className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5 mb-2"
                 >
-                  <div className="text-[13px] font-mono text-wolf-text-sec mb-2">
-                    Round {gi + 1} · {game.course.name}
+                  <div className="text-[13px] font-mono text-wolf-text-sec mb-2 flex items-center gap-2">
+                    <span>Round {gi + 1} · {game.course.name}</span>
+                    <span className="text-[10px] bg-wolf-card border border-wolf-border py-0.5 px-1.5 rounded">
+                      {(game.gameType ?? 'wolf') === 'six' ? '6x6x6' : 'Wolf'}
+                    </span>
                   </div>
                   {standings.map((s, i) => (
                     <div

@@ -14,6 +14,7 @@ export interface PlayerProfile {
 }
 
 export type LoneWolfType = 'early' | 'late' | 'default';
+export type GameType = 'wolf' | 'six';
 export type GameStatus = 'active' | 'complete' | 'abandoned';
 
 export interface PendingWolfDecision {
@@ -38,6 +39,7 @@ export interface CompletedHole {
 export interface Game {
   id: string;
   createdAt: number;
+  gameType?: GameType;                  // default: 'wolf'
   players: string[];
   buyIn: number;
   handicaps: Record<string, number>;
@@ -48,6 +50,7 @@ export interface Game {
   holes: CompletedHole[];
   status: GameStatus;
   weekendId: string | null;
+  teamSegments?: [number, number][];    // 6x6x6: 3 pairs of player indices, one per 6-hole segment
   // Advanced config — all optional with defaults
   startingHole?: number;                // default: 1
   lastPlaceWolf?: boolean;              // default: true
@@ -103,14 +106,34 @@ export interface HoleMatchupDetail {
   summary: string;
 }
 
+export interface SixHoleMatchupDetail {
+  lowBall: {
+    teamAPlayer: string;
+    teamANet: number;
+    teamBPlayer: string;
+    teamBNet: number;
+    result: 'teamA' | 'teamB' | 'push';
+  };
+  highBall: {
+    teamAPlayer: string;
+    teamANet: number;
+    teamBPlayer: string;
+    teamBNet: number;
+    result: 'teamA' | 'teamB' | 'push';
+  };
+  summary: string;
+}
+
 export interface CreateGameParams {
+  gameType?: GameType;
   players: string[];
   buyIn: number;
   handicaps: Record<string, number>;
-  wolfOrder: number[];
+  wolfOrder?: number[];
   skinsEnabled: boolean;
   skinsValue: number;
   course: Course;
+  teamSegments?: [number, number][];
   // Advanced config — all optional with defaults
   startingHole?: number;
   lastPlaceWolf?: boolean;
