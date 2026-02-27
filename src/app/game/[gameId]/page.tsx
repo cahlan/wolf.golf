@@ -120,6 +120,17 @@ function GameView({
   const holeInfo = activeHoleNum <= 18 ? game.course.holes[activeHoleNum - 1] : null;
   const strokesThisHole = activeHoleNum <= 18 ? getAllStrokesForHole(game, activeHoleNum) : {};
 
+  // Players in order of play: non-wolf in tee rotation order, wolf always last
+  const orderedPlayers = useMemo(() => {
+    const nonWolfPlayers = game.players.filter(p => p !== wolfName);
+    const rotation = (activeHoleNum - (game.startingHole ?? 1)) % nonWolfPlayers.length;
+    return [
+      ...nonWolfPlayers.slice(rotation),
+      ...nonWolfPlayers.slice(0, rotation),
+      wolfName,
+    ];
+  }, [game.players, wolfName, activeHoleNum, game.startingHole]);
+
   const beginHole = useCallback(() => {
     const gs: Record<string, string> = {};
     game.players.forEach(p => (gs[p] = ''));
@@ -339,14 +350,14 @@ function GameView({
               {currentHole <= 18 && (
                 <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
                   <Label className="mb-2">WHO POPS THIS HOLE</Label>
-                  {game.players.map(p => {
+                  {orderedPlayers.map((p, idx) => {
                     const strokes = strokesThisHole[p];
                     const isWolf = p === wolfName;
                     return (
                       <div
                         key={p}
                         className={`flex items-center justify-between py-[7px]
-                          ${p !== game.players[0] ? 'border-t border-wolf-border' : ''}`}
+                          ${idx !== 0 ? 'border-t border-wolf-border' : ''}`}
                       >
                         <div className="flex items-center gap-2">
                           {isWolf && <span className="text-sm">🐺</span>}
