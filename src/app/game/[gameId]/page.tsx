@@ -441,63 +441,7 @@ function GameView({
                 </button>
               </div>
 
-              {/* Wolf badge */}
-              {currentHole <= 18 && (
-                <div className="flex items-center justify-center gap-2 py-2 px-4 bg-wolf-orange-bg
-                  rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
-                  <span className="text-lg">🐺</span>
-                  <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
-                  {currentHole >= (game.lastPlaceWolfStartHole ?? 17) && (
-                    <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
-                      LAST PLACE
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* WHO POPS */}
-              {currentHole <= 18 && (
-                <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
-                  <Label className="mb-2">WHO POPS THIS HOLE</Label>
-                  {orderedPlayers.map((p, idx) => {
-                    const strokes = strokesThisHole[p];
-                    const isWolf = p === wolfName;
-                    return (
-                      <div
-                        key={p}
-                        className={`flex items-center justify-between py-[7px]
-                          ${idx !== 0 ? 'border-t border-wolf-border' : ''}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isWolf && <span className="text-sm">🐺</span>}
-                          <span className={`text-[15px] ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-                            {p}
-                          </span>
-                          <span className="text-[11px] text-wolf-text-muted font-mono">
-                            ({game.handicaps[p]} HC)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {strokes > 0 ? (
-                            <>
-                              {Array.from({ length: strokes }, (_, i) => (
-                                <div key={i} className="w-2.5 h-2.5 rounded-full bg-wolf-accent" />
-                              ))}
-                              <span className="font-mono text-[13px] font-bold text-wolf-accent ml-0.5">
-                                {strokes > 1 ? `${strokes} strokes` : '1 stroke'}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="font-mono text-xs text-wolf-text-muted">&mdash;</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Spectator: show pending wolf decision from scorekeeper */}
+              {/* Spectator: pending wolf decision — show ScoresPhase-style team layout */}
               {isSpectator && game.pendingWolfDecision?.holeNum === currentHole && (() => {
                 const d = game.pendingWolfDecision;
                 const isLone = !!d.loneWolf;
@@ -505,10 +449,10 @@ function GameView({
                 const opponents = game.players.filter(p => !wolfTeam.includes(p));
 
                 return (
-                  <div className="mb-4">
+                  <>
                     {/* Wolf team */}
-                    <div className="bg-wolf-orange-bg rounded-xl border border-wolf-orange/20 p-3.5 mb-3">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="bg-wolf-orange-bg rounded-xl border border-wolf-orange/20 pt-2.5 px-3.5 pb-1.5 mb-3">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="text-xs font-mono text-wolf-orange font-semibold tracking-[1.5px] flex items-center gap-1.5">
                           🐺 {isLone ? 'LONE WOLF' : 'WOLF TEAM'}
                         </div>
@@ -518,15 +462,28 @@ function GameView({
                           </span>
                         )}
                       </div>
-                      {wolfTeam.map((p, i) => (
-                        <div key={p} className={`flex items-center gap-1.5 py-1.5
-                          ${i > 0 ? 'border-t border-wolf-orange/10' : ''}`}>
-                          {p === d.wolf && <span className="text-[13px]">🐺</span>}
-                          <span className={`text-[15px] ${p === d.wolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-                            {p}
-                          </span>
-                        </div>
-                      ))}
+                      {wolfTeam.map(p => {
+                        const strokes = strokesThisHole[p] || 0;
+                        const isWolf = p === d.wolf;
+                        return (
+                          <div key={p} className="flex items-center gap-1.5 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-[15px] flex items-center gap-1
+                                ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
+                                {isWolf && <span className="text-[13px]">🐺</span>}
+                                {p}
+                                {strokes > 0 && (
+                                  <span className="inline-flex gap-0.5 ml-0.5">
+                                    {Array.from({ length: strokes }, (_, i) => (
+                                      <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
+                                    ))}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* VS divider */}
@@ -538,23 +495,92 @@ function GameView({
                     </div>
 
                     {/* Opponents */}
-                    <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
-                      <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-1.5">
+                    <div className="bg-wolf-card rounded-xl border border-wolf-border pt-2.5 px-3.5 pb-1.5 mb-3">
+                      <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-2">
                         {isLone ? 'THE FIELD' : 'OPPONENTS'}
                       </div>
-                      {opponents.map((p, i) => (
-                        <div key={p} className={`py-1.5 ${i > 0 ? 'border-t border-wolf-border' : ''}`}>
-                          <span className="text-[15px] text-wolf-text">{p}</span>
-                        </div>
-                      ))}
+                      {opponents.map(p => {
+                        const strokes = strokesThisHole[p] || 0;
+                        return (
+                          <div key={p} className="flex items-center gap-1.5 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[15px] flex items-center gap-1 text-wolf-text">
+                                {p}
+                                {strokes > 0 && (
+                                  <span className="inline-flex gap-0.5 ml-0.5">
+                                    {Array.from({ length: strokes }, (_, i) => (
+                                      <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
+                                    ))}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    <div className="text-center text-[13px] text-wolf-text-muted font-mono">
+                    <div className="text-center text-[13px] text-wolf-text-muted font-mono mb-4">
                       Waiting for scores...
                     </div>
-                  </div>
+                  </>
                 );
               })()}
+
+              {/* Wolf badge + WHO POPS (hidden when spectator has pending decision) */}
+              {currentHole <= 18 && !(isSpectator && game.pendingWolfDecision?.holeNum === currentHole) && (
+                <>
+                  <div className="flex items-center justify-center gap-2 py-2 px-4 bg-wolf-orange-bg
+                    rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
+                    <span className="text-lg">🐺</span>
+                    <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
+                    {currentHole >= (game.lastPlaceWolfStartHole ?? 17) && (
+                      <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
+                        LAST PLACE
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
+                    <Label className="mb-2">WHO POPS THIS HOLE</Label>
+                    {orderedPlayers.map((p, idx) => {
+                      const strokes = strokesThisHole[p];
+                      const isWolf = p === wolfName;
+                      return (
+                        <div
+                          key={p}
+                          className={`flex items-center justify-between py-[7px]
+                            ${idx !== 0 ? 'border-t border-wolf-border' : ''}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isWolf && <span className="text-sm">🐺</span>}
+                            <span className={`text-[15px] ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
+                              {p}
+                            </span>
+                            <span className="text-[11px] text-wolf-text-muted font-mono">
+                              ({game.handicaps[p]} HC)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {strokes > 0 ? (
+                              <>
+                                {Array.from({ length: strokes }, (_, i) => (
+                                  <div key={i} className="w-2.5 h-2.5 rounded-full bg-wolf-accent" />
+                                ))}
+                                <span className="font-mono text-[13px] font-bold text-wolf-accent ml-0.5">
+                                  {strokes > 1 ? `${strokes} strokes` : '1 stroke'}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="font-mono text-xs text-wolf-text-muted">&mdash;</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
 
               {/* Quick standings (with optional skins tab) */}
               <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
