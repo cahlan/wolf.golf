@@ -100,6 +100,7 @@ function GameView({
   const startHole = game.startingHole ?? 1;
   const [currentHole, setCurrentHole] = useState(() => startHole + game.holes.length);
   const [tab, setTab] = useState<'play' | 'standings' | 'skins'>('play');
+  const [copied, setCopied] = useState(false);
   const [holeInput, setHoleInput] = useState<HoleInput | null>(null);
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
@@ -227,6 +228,21 @@ function GameView({
           <div className="font-mono text-xs text-wolf-accent tracking-[2px]">
             {game.course.name.toUpperCase()} &middot; {game.id}
           </div>
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/join?code=${game.id}`;
+              navigator.clipboard.writeText(url).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="bg-transparent border border-wolf-border rounded px-1.5 py-0.5 text-[11px]
+              font-mono text-wolf-text-muted cursor-pointer hover:border-wolf-accent hover:text-wolf-accent
+              transition-colors"
+            title="Copy spectator link"
+          >
+            {copied ? '✓ Copied' : '📋'}
+          </button>
           {isSpectator && (
             <span className="text-[10px] font-mono bg-wolf-card border border-wolf-border text-wolf-text-muted py-0.5 px-1.5 rounded">
               SPECTATING
