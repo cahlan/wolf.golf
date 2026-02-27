@@ -80,6 +80,22 @@ export default function WeekendPage() {
             {weekendGames.map((game, gi) => {
               const standings = calculateStandings(game);
               const placementOverride = game.weekendPlacementOverride ?? {};
+
+              const standingsForDisplay = [...standings].sort((a, b) => {
+                const pa = placementOverride[a.name];
+                const pb = placementOverride[b.name];
+                const aHas = typeof pa === 'number' && pa >= 1;
+                const bHas = typeof pb === 'number' && pb >= 1;
+
+                if (aHas && bHas) {
+                  if (pa !== pb) return pa - pb;
+                  return b.points - a.points;
+                }
+                if (aHas && !bHas) return -1;
+                if (!aHas && bHas) return 1;
+                return b.points - a.points;
+              });
+
               return (
                 <div
                   key={game.id}
@@ -117,7 +133,7 @@ export default function WeekendPage() {
                     </div>
                   </div>
 
-                  {standings.map((s, i) => (
+                  {standingsForDisplay.map((s, i) => (
                     <div
                       key={s.name}
                       className={`flex justify-between text-sm py-[3px]
