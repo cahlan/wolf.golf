@@ -112,3 +112,19 @@ export function getSuggestedPlayers(): PlayerProfile[] {
   const cache = loadPlayerCache();
   return Object.values(cache);
 }
+
+// ============================================================================
+// SPECTATOR PERSISTENCE
+// ============================================================================
+
+export function saveSpectatorGameId(id: string): void {
+  try { localStorage.setItem('wolf_spectating', id); } catch {}
+}
+
+export function loadSpectatorGameId(): string | null {
+  try { return localStorage.getItem('wolf_spectating'); } catch { return null; }
+}
+
+export function clearSpectatorGameId(): void {
+  try { localStorage.removeItem('wolf_spectating'); } catch {}
+}
