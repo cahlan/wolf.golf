@@ -4,12 +4,19 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { calculateWeekendStandings, calculateStandings, WEEKEND_PLACEMENT_POINTS } from '@/lib/engine';
+import type { Game } from '@/lib/types/game';
 import { BackButton, Button, Fade, Label, BottomSheet } from '@/components/ui';
+
+function formatRoundLabel(game: Game, index: number) {
+  const course = game?.course?.name ? ` · ${game.course.name}` : '';
+  return `Round ${index + 1}${course}`;
+}
 
 export default function WeekendPage() {
   const router = useRouter();
-  const { weekendGames, resetWeekend } = useGame();
+  const { weekendGames, resetWeekend, removeWeekendGame } = useGame();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [removeGameId, setRemoveGameId] = useState<string | null>(null);
 
   const weekendStandings = calculateWeekendStandings(weekendGames);
 
@@ -69,15 +76,28 @@ export default function WeekendPage() {
               const standings = calculateStandings(game);
               return (
                 <div
-                  key={gi}
+                  key={game.id}
                   className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5 mb-2"
                 >
-                  <div className="text-[13px] font-mono text-wolf-text-sec mb-2 flex items-center gap-2">
-                    <span>Round {gi + 1} · {game.course.name}</span>
-                    <span className="text-[10px] bg-wolf-card border border-wolf-border py-0.5 px-1.5 rounded">
-                      {(game.gameType ?? 'wolf') === 'six' ? '6x6x6' : 'Wolf'}
-                    </span>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="text-[13px] font-mono text-wolf-text-sec">
+                        {formatRoundLabel(game, gi)}
+                      </div>
+                      <span className="text-[10px] bg-wolf-card border border-wolf-border py-0.5 px-1.5 rounded text-wolf-text-sec">
+                        {(game.gameType ?? 'wolf') === 'six' ? '6x6x6' : 'Wolf'}
+                      </span>
+                    </div>
+                    <Button
+                      variant="mini"
+                      aria-label={`Remove ${formatRoundLabel(game, gi)} from weekend`}
+                      onClick={() => setRemoveGameId(game.id)}
+                      title="Remove round"
+                    >
+                      ×
+                    </Button>
                   </div>
+
                   {standings.map((s, i) => (
                     <div
                       key={s.name}
@@ -120,6 +140,26 @@ export default function WeekendPage() {
             className="w-full py-2.5 bg-transparent border-none text-wolf-red text-[13px] cursor-pointer mt-2"
           >
             Clear all games and start fresh
+          </button>
+        </BottomSheet>
+
+        <BottomSheet open={!!removeGameId} onClose={() => setRemoveGameId(null)}>
+          <div className="text-lg font-bold mb-2">Remove round?</div>
+          <p className="text-wolf-text-sec text-sm mt-0 mb-5">
+            This will remove this round from the weekend standings on this device.
+          </p>
+          <Button variant="primary" onClick={() => setRemoveGameId(null)}>
+            Keep Round
+          </Button>
+          <button
+            onClick={() => {
+              if (!removeGameId) return;
+              removeWeekendGame(removeGameId);
+              setRemoveGameId(null);
+            }}
+            className="w-full py-2.5 bg-transparent border-none text-wolf-red text-[13px] cursor-pointer mt-2"
+          >
+            Remove round from weekend
           </button>
         </BottomSheet>
       </Fade>
