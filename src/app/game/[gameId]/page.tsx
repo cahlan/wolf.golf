@@ -15,7 +15,7 @@ import {
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
 import { getSegmentForHole } from '@/lib/engine/six';
-import { Button, Fade, Label, BottomSheet } from '@/components/ui';
+import { Button, Label, BottomSheet } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { SixHoleInput } from '@/components/game/six-hole-input';
 import { StandingsView } from '@/components/game/standings-view';
@@ -173,6 +173,19 @@ function GameView({
   const [holeInput, setHoleInput] = useState<HoleInput | null>(null);
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+
+  // Spectator update animation — pulse when game state changes via realtime
+  const [updateKey, setUpdateKey] = useState(0);
+  const prevGameRef = useRef({ holesLen: game.holes.length, pendingWolf: game.pendingWolfDecision });
+  useEffect(() => {
+    if (!isSpectator) return;
+    const prev = prevGameRef.current;
+    const changed = game.holes.length !== prev.holesLen || game.pendingWolfDecision !== prev.pendingWolf;
+    if (changed) {
+      setUpdateKey(k => k + 1);
+    }
+    prevGameRef.current = { holesLen: game.holes.length, pendingWolf: game.pendingWolfDecision };
+  }, [isSpectator, game.holes.length, game.pendingWolfDecision]);
 
   // Clear pending wolf decision when hole changes (wolf only)
   useEffect(() => {
@@ -446,7 +459,12 @@ function GameView({
       {tab === 'play' && (
         <div className="py-3.5 px-5">
           {!holeInput ? (
-            <Fade>
+            <div
+              key={isSpectator ? `spectator-${updateKey}` : 'scorekeeper'}
+              className={isSpectator && updateKey > 0
+                ? 'animate-[spectatorPulse_300ms_ease-out]'
+                : 'animate-[fadeUp_0.2s_ease-out]'}
+            >
               {/* Hole navigation */}
               <div className="flex items-center justify-between mb-3">
                 <button
@@ -737,7 +755,7 @@ function GameView({
                   View Settlement &rarr;
                 </Button>
               )}
-            </Fade>
+            </div>
           ) : (
             <>
               {editingHoleNum && (
