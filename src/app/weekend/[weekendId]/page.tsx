@@ -79,6 +79,7 @@ export default function WeekendPage() {
             <Label className="mb-2">ROUND RESULTS</Label>
             {weekendGames.map((game, gi) => {
               const standings = calculateStandings(game);
+              const placementOverride = game.weekendPlacementOverride ?? {};
               return (
                 <div
                   key={game.id}
@@ -124,7 +125,7 @@ export default function WeekendPage() {
                     >
                       <span>{i + 1}. {s.name}</span>
                       <span className="font-mono">
-                        {s.points > 0 ? '+' : ''}{s.points} pts &rarr; {WEEKEND_PLACEMENT_POINTS[i] ?? 0} wknd
+                        {s.points > 0 ? '+' : ''}{s.points} pts &rarr; {WEEKEND_PLACEMENT_POINTS[(Math.max(1, placementOverride[s.name] ?? (i + 1)) - 1)] ?? 0} wknd
                       </span>
                     </div>
                   ))}
