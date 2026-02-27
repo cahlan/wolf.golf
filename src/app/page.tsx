@@ -9,7 +9,7 @@ import { Button, Fade } from '@/components/ui';
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hasActiveGame, resumeGame, weekendGames, setGame, setIsScorekeeper } = useGame();
+  const { hasActiveGame, resumeGame, weekendGames, setGame, setIsScorekeeper, spectatorGameId } = useGame();
   const testTriggered = useRef(false);
 
   useEffect(() => {
@@ -46,6 +46,11 @@ function HomeContent() {
         {hasActiveGame && (
           <Button variant="primary" onClick={handleResume} className="mb-2.5">
             Resume Round &rarr;
+          </Button>
+        )}
+        {spectatorGameId && !hasActiveGame && (
+          <Button onClick={() => router.push(`/game/${spectatorGameId}`)} className="mb-2.5">
+            Rejoin Round &rarr;
           </Button>
         )}
         <Button

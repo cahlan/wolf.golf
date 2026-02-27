@@ -8,6 +8,9 @@ import {
   clearActiveGame,
   saveWeekendGames,
   loadWeekendGames,
+  saveSpectatorGameId,
+  loadSpectatorGameId,
+  clearSpectatorGameId,
 } from '@/lib/storage/local';
 import { supabase } from '@/lib/supabase/client';
 
@@ -19,6 +22,7 @@ interface GameContextValue {
   isScorekeeper: boolean;
   setIsScorekeeper: (v: boolean) => void;
   isSpectator: boolean;
+  spectatorGameId: string | null;
   hasActiveGame: boolean;
   resumeGame: () => Game | null;
   spectateGame: (game: Game) => void;
@@ -35,6 +39,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [weekendGames, setWeekendGames] = useState<Game[]>([]);
   const [isScorekeeper, setIsScorekeeper] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
+  const [spectatorGameId, setSpectatorGameId] = useState<string | null>(null);
   const [hasActiveGame, setHasActiveGame] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const gameRef = useRef(game);
@@ -45,6 +50,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const active = loadActiveGame();
     setHasActiveGame(!!active);
     setWeekendGames(loadWeekendGames());
+    const savedSpectatorId = loadSpectatorGameId();
+    setSpectatorGameId(savedSpectatorId);
     setHydrated(true);
   }, []);
 
@@ -144,11 +151,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState(g);
     setIsScorekeeper(false);
     setIsSpectator(true);
+    saveSpectatorGameId(g.id);
+    setSpectatorGameId(g.id);
   }, []);
 
   const leaveSpectator = useCallback(() => {
     setGameState(null);
     setIsSpectator(false);
+    clearSpectatorGameId();
+    setSpectatorGameId(null);
   }, []);
 
   const completeRound = useCallback((gameOverride?: Game) => {
@@ -182,6 +193,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       isScorekeeper,
       setIsScorekeeper,
       isSpectator,
+      spectatorGameId,
       hasActiveGame,
       resumeGame,
       spectateGame,
