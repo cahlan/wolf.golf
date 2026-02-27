@@ -3,6 +3,7 @@ export { generateCode, createGame } from './game';
 export { createCourse } from './course';
 export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';
 export { getWolfForHole } from './wolf';
+export { getTeeOrderForHole } from './tee-order';
 export { calculateHolePoints, calculateLoneWolfPoints } from './scoring';
 export { calculateGameHolePoints } from './scoring-utils';
 export { getHoleMatchupDetail } from './matchup';

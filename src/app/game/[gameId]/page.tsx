@@ -238,16 +238,10 @@ function GameView({
     }
   }, [isScorekeeper, game, currentHole, wolfName, setGame]);
 
-  // Players in order of play: non-wolf in tee rotation order, wolf always last
+  // Players in order of play (tee order): rotate based on who was wolf last hole; wolf always last.
   const orderedPlayers = useMemo(() => {
-    const nonWolfPlayers = game.players.filter(p => p !== wolfName);
-    const rotation = (activeHoleNum - (game.startingHole ?? 1)) % nonWolfPlayers.length;
-    return [
-      ...nonWolfPlayers.slice(rotation),
-      ...nonWolfPlayers.slice(0, rotation),
-      wolfName,
-    ];
-  }, [game.players, wolfName, activeHoleNum, game.startingHole]);
+    return getTeeOrderForHole(game, activeHoleNum);
+  }, [game, activeHoleNum]);
 
   const beginHole = useCallback(() => {
     const gs: Record<string, string> = {};
@@ -710,7 +704,7 @@ function GameView({
                       {/* WHO POPS */}
                       {currentHole <= 18 && (
                         <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
-                          <Label className="mb-2">WHO POPS THIS HOLE</Label>
+                          <Label className="mb-2">PLAY ORDER</Label>
                           {orderedPlayers.map((p, idx) => {
                             const strokes = strokesThisHole[p];
                             const isWolf = p === wolfName;
