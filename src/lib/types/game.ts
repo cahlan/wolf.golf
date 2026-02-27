@@ -58,6 +58,10 @@ export interface Game {
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
   skinsCarryover?: boolean;             // default: true
   pendingWolfDecision?: PendingWolfDecision | null;
+
+  // Weekend scoring overrides
+  // Map player name -> placement number (1 = first). Used for weekend standings only.
+  weekendPlacementOverride?: Record<string, number>;
 }
 
 export interface HoleInput {

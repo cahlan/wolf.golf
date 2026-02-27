@@ -31,6 +31,7 @@ interface GameContextValue {
   abandonGame: () => void;
   resetWeekend: () => void;
   removeWeekendGame: (gameId: string) => void;
+  updateWeekendGame: (game: Game) => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -140,6 +141,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setWeekendGames(prev => prev.filter(g => g.id !== gameId));
   }, []);
 
+  const updateWeekendGame = useCallback((updatedGame: Game) => {
+    setWeekendGames(prev => prev.map(g => (g.id === updatedGame.id ? updatedGame : g)));
+  }, []);
+
   return (
     <GameContext.Provider value={{
       game,
@@ -158,6 +163,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       abandonGame,
       resetWeekend,
       removeWeekendGame,
+      updateWeekendGame,
     }}>
       {children}
     </GameContext.Provider>

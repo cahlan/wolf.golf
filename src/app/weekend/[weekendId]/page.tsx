@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { calculateWeekendStandings, calculateStandings, WEEKEND_PLACEMENT_POINTS } from '@/lib/engine';
 import type { Game } from '@/lib/types/game';
+import { supabase } from '@/lib/supabase/client';
 import { BackButton, Button, Fade, Label, BottomSheet } from '@/components/ui';
 
 function formatRoundLabel(game: Game, index: number) {
@@ -14,9 +15,13 @@ function formatRoundLabel(game: Game, index: number) {
 
 export default function WeekendPage() {
   const router = useRouter();
-  const { weekendGames, resetWeekend, removeWeekendGame } = useGame();
+  const { weekendGames, resetWeekend, removeWeekendGame, updateWeekendGame } = useGame();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [removeGameId, setRemoveGameId] = useState<string | null>(null);
+
+  const [editGameId, setEditGameId] = useState<string | null>(null);
+  const editingGame = weekendGames.find(g => g.id === editGameId) ?? null;
+  const [placementsDraft, setPlacementsDraft] = useState<Record<string, number>>({});
 
   const weekendStandings = calculateWeekendStandings(weekendGames);
 
@@ -88,14 +93,27 @@ export default function WeekendPage() {
                         {(game.gameType ?? 'wolf') === 'six' ? '6x6x6' : 'Wolf'}
                       </span>
                     </div>
-                    <Button
-                      variant="mini"
-                      aria-label={`Remove ${formatRoundLabel(game, gi)} from weekend`}
-                      onClick={() => setRemoveGameId(game.id)}
-                      title="Remove round"
-                    >
-                      ×
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="mini"
+                        aria-label={`Edit weekend placements for ${formatRoundLabel(game, gi)}`}
+                        onClick={() => {
+                          setEditGameId(game.id);
+                          setPlacementsDraft({ ...(game.weekendPlacementOverride ?? {}) });
+                        }}
+                        title="Edit weekend placements"
+                      >
+                        ✎
+                      </Button>
+                      <Button
+                        variant="mini"
+                        aria-label={`Remove ${formatRoundLabel(game, gi)} from weekend`}
+                        onClick={() => setRemoveGameId(game.id)}
+                        title="Remove round"
+                      >
+                        ×
+                      </Button>
+                    </div>
                   </div>
 
                   {standings.map((s, i) => (
@@ -141,6 +159,86 @@ export default function WeekendPage() {
           >
             Clear all games and start fresh
           </button>
+        </BottomSheet>
+
+        <BottomSheet open={!!editGameId} onClose={() => setEditGameId(null)}>
+          <div className="text-lg font-bold mb-2">Edit weekend placements</div>
+          <p className="text-wolf-text-sec text-sm mt-0 mb-5">
+            Use this to break ties / override who gets weekend placement points for this round.
+          </p>
+
+          {editingGame && (
+            <div className="space-y-3">
+              {editingGame.players.map((p) => {
+                const value = placementsDraft[p] ?? 0;
+                return (
+                  <div key={p} className="flex items-center justify-between gap-3">
+                    <div className="font-bold text-wolf-text">{p}</div>
+                    <input
+                      type="number"
+                      min={0}
+                      max={editingGame.players.length}
+                      value={value}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value) || 0;
+                        setPlacementsDraft(prev => ({ ...prev, [p]: v }));
+                      }}
+                      className="w-20 text-lg font-mono text-center bg-wolf-card border border-wolf-border
+                        rounded-[10px] py-2 px-2 text-wolf-text outline-none"
+                    />
+                  </div>
+                );
+              })}
+
+              <div className="text-[12px] text-wolf-text-muted">
+                Enter 1-4 to set placement. Use the same number for ties. Use 0 to clear an override.
+              </div>
+
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  if (!editingGame) return;
+
+                  // Clean draft: keep only valid 1..N entries
+                  const n = editingGame.players.length;
+                  const cleaned: Record<string, number> = {};
+                  Object.entries(placementsDraft).forEach(([name, placement]) => {
+                    if (typeof placement === 'number' && placement >= 1 && placement <= n) cleaned[name] = placement;
+                  });
+
+                  const updated: Game = {
+                    ...editingGame,
+                    weekendPlacementOverride: Object.keys(cleaned).length ? cleaned : undefined,
+                  };
+
+                  // Optimistic local update
+                  updateWeekendGame(updated);
+
+                  // Persist to Supabase
+                  const { error } = await supabase
+                    .from('games')
+                    .upsert({ id: updated.id, state: updated, updated_at: new Date().toISOString() });
+
+                  if (error) {
+                    console.error('[weekend] Failed to sync weekend placement override:', error.message);
+                  }
+
+                  setEditGameId(null);
+                }}
+              >
+                Save placements
+              </Button>
+
+              <Button
+                onClick={() => {
+                  if (!editingGame) return;
+                  setPlacementsDraft({});
+                }}
+              >
+                Clear overrides
+              </Button>
+            </div>
+          )}
         </BottomSheet>
 
         <BottomSheet open={!!removeGameId} onClose={() => setRemoveGameId(null)}>
