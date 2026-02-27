@@ -11,7 +11,8 @@ import {
   getAllStrokesForHole,
   getPlayerStrokesOnHole,
 } from '@/lib/engine';
-import type { Game, HoleInput } from '@/lib/types/game';
+import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
+import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
 import { Button, Fade, Label, BottomSheet } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { StandingsView } from '@/components/game/standings-view';
@@ -103,6 +104,17 @@ function GameView({
   const [holeInput, setHoleInput] = useState<HoleInput | null>(null);
   const [editingHoleNum, setEditingHoleNum] = useState<number | null>(null);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [wolfDecision, setWolfDecision] = useState<{
+    partner: string | null;
+    loneWolf: LoneWolfType | null;
+  } | null>(null);
+  const [wolfPickerOpen, setWolfPickerOpen] = useState(true);
+
+  // Reset wolf decision when hole changes
+  useEffect(() => {
+    setWolfDecision(null);
+    setWolfPickerOpen(true);
+  }, [currentHole]);
 
   // Keep spectators on the latest hole as scores come in
   useEffect(() => {
@@ -124,15 +136,26 @@ function GameView({
     const gs: Record<string, string> = {};
     game.players.forEach(p => (gs[p] = ''));
     setEditingHoleNum(null);
-    setHoleInput({
-      holeNum: currentHole,
-      wolf: wolfName,
-      partner: null,
-      loneWolf: null,
-      grossScores: gs,
-      phase: 'wolf-decision',
-    });
-  }, [game.players, currentHole, wolfName]);
+    if (wolfDecision) {
+      setHoleInput({
+        holeNum: currentHole,
+        wolf: wolfName,
+        partner: wolfDecision.partner,
+        loneWolf: wolfDecision.loneWolf,
+        grossScores: gs,
+        phase: 'scores',
+      });
+    } else {
+      setHoleInput({
+        holeNum: currentHole,
+        wolf: wolfName,
+        partner: null,
+        loneWolf: null,
+        grossScores: gs,
+        phase: 'wolf-decision',
+      });
+    }
+  }, [game.players, currentHole, wolfName, wolfDecision]);
 
   const editHole = useCallback((holeNum: number) => {
     const existingHole = game.holes.find(h => h.holeNum === holeNum);
@@ -376,6 +399,107 @@ function GameView({
                   })}
                 </div>
               )}
+
+              {/* Inline wolf decision (scorekeeper only, next unscored hole) */}
+              {isScorekeeper && currentHole === game.holes.length + 1 && currentHole <= 18 && (() => {
+                const nonWolfPlayers = game.players.filter(p => p !== wolfName);
+                const rotation = (currentHole - (game.startingHole ?? 1)) % nonWolfPlayers.length;
+                const otherPlayers = [
+                  ...nonWolfPlayers.slice(rotation),
+                  ...nonWolfPlayers.slice(0, rotation),
+                ];
+
+                if (wolfDecision && !wolfPickerOpen) {
+                  // Collapsed summary row
+                  const summaryText = wolfDecision.partner
+                    ? `Partner: ${wolfDecision.partner}`
+                    : wolfDecision.loneWolf === 'early'
+                      ? `Lone Wolf: Before Drives +${LONE_WOLF_POINTS.early}`
+                      : wolfDecision.loneWolf === 'late'
+                        ? `Lone Wolf: After Drives +${LONE_WOLF_POINTS.late}`
+                        : `Lone Wolf: Default +${LONE_WOLF_POINTS.default}`;
+                  return (
+                    <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[15px]">
+                          <span>🐺</span>
+                          <span className="font-semibold text-wolf-text">{summaryText}</span>
+                        </div>
+                        <button
+                          onClick={() => setWolfPickerOpen(true)}
+                          className="bg-transparent border-none text-wolf-accent text-[13px] font-semibold cursor-pointer p-0"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Full picker
+                return (
+                  <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
+                    <Label className="mb-2.5">WOLF&apos;S CALL</Label>
+
+                    {/* Partner buttons */}
+                    <div className="flex gap-2 mb-2.5 flex-wrap">
+                      {otherPlayers.map(p => {
+                        const strokes = strokesThisHole[p] || 0;
+                        const isSelected = wolfDecision?.partner === p;
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => {
+                              setWolfDecision({ partner: p, loneWolf: null });
+                              setWolfPickerOpen(false);
+                            }}
+                            className={`flex-1 min-w-0 py-2.5 px-3 rounded-full border font-body text-[14px] font-medium cursor-pointer
+                              flex items-center justify-center gap-1.5
+                              ${isSelected
+                                ? 'bg-wolf-accent text-wolf-bg border-wolf-accent'
+                                : 'bg-wolf-bg border-wolf-border text-wolf-text hover:border-wolf-accent/50'}`}
+                          >
+                            <span className="truncate">{p}</span>
+                            {strokes > 0 && (
+                              <span className="inline-flex gap-0.5 flex-shrink-0">
+                                {Array.from({ length: strokes }, (_, i) => (
+                                  <span key={i} className="w-[6px] h-[6px] rounded-full bg-wolf-accent inline-block" />
+                                ))}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Lone wolf buttons */}
+                    <div className="flex gap-2 flex-wrap">
+                      {([
+                        { type: 'early' as const, label: '🐺 Lone Before', pts: LONE_WOLF_POINTS.early },
+                        { type: 'late' as const, label: 'Lone After', pts: LONE_WOLF_POINTS.late },
+                        { type: 'default' as const, label: 'Default Lone', pts: LONE_WOLF_POINTS.default },
+                      ]).map(opt => {
+                        const isSelected = wolfDecision?.loneWolf === opt.type;
+                        return (
+                          <button
+                            key={opt.type}
+                            onClick={() => {
+                              setWolfDecision({ partner: null, loneWolf: opt.type });
+                              setWolfPickerOpen(false);
+                            }}
+                            className={`flex-1 min-w-0 py-2 px-2 rounded-full border text-[12px] font-mono font-semibold cursor-pointer
+                              ${isSelected
+                                ? 'bg-wolf-orange text-wolf-bg border-wolf-orange'
+                                : 'bg-wolf-orange-bg border-wolf-orange/20 text-wolf-orange hover:border-wolf-orange/50'}`}
+                          >
+                            {opt.label} +{opt.pts}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Quick standings (with optional skins tab) */}
               <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
