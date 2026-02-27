@@ -16,6 +16,13 @@ export interface PlayerProfile {
 export type LoneWolfType = 'early' | 'late' | 'default';
 export type GameStatus = 'active' | 'complete' | 'abandoned';
 
+export interface PendingWolfDecision {
+  holeNum: number;
+  wolf: string;
+  partner: string | null;
+  loneWolf: LoneWolfType | null;
+}
+
 export interface CompletedHole {
   holeNum: number;
   par: number;
@@ -47,6 +54,7 @@ export interface Game {
   lastPlaceWolfStartHole?: number;      // default: 17
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
   skinsCarryover?: boolean;             // default: true
+  pendingWolfDecision?: PendingWolfDecision | null;
 }
 
 export interface HoleInput {

@@ -12,12 +12,13 @@ interface HoleInputFlowProps {
   setHoleInput: React.Dispatch<React.SetStateAction<HoleInput | null>>;
   onSubmit: () => void;
   onCancel: () => void;
+  onWolfDecision?: (partner: string | null, loneWolf: 'early' | 'late' | 'default' | null) => void;
   strokesThisHole: Record<string, number>;
   holeInfo: HoleInfo;
 }
 
 export function HoleInputFlow({
-  game, holeInput, setHoleInput, onSubmit, onCancel, strokesThisHole, holeInfo,
+  game, holeInput, setHoleInput, onSubmit, onCancel, onWolfDecision, strokesThisHole, holeInfo,
 }: HoleInputFlowProps) {
   const { phase, wolf, holeNum } = holeInput;
 
@@ -30,9 +31,11 @@ export function HoleInputFlow({
 
   function selectPartner(partner: string) {
     setHoleInput(prev => prev ? { ...prev, partner, loneWolf: null, phase: 'scores' } : prev);
+    onWolfDecision?.(partner, null);
   }
   function selectLoneWolf(type: 'early' | 'late' | 'default') {
     setHoleInput(prev => prev ? { ...prev, partner: null, loneWolf: type, phase: 'scores' } : prev);
+    onWolfDecision?.(null, type);
   }
   function updateScore(player: string, value: string) {
     setHoleInput(prev =>
@@ -153,6 +156,7 @@ export function HoleInputFlow({
         previewPoints={previewPoints}
         matchupDetail={matchupDetail}
         onSubmit={onSubmit}
+        onWolfDecision={onWolfDecision}
         holeNum={holeNum}
         wolf={wolf}
       />}
@@ -162,7 +166,7 @@ export function HoleInputFlow({
 
 function ScoresPhase({
   game, holeInput, setHoleInput, holeInfo, strokesThisHole,
-  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, holeNum, wolf,
+  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, onWolfDecision, holeNum, wolf,
 }: {
   game: Game;
   holeInput: HoleInput;
@@ -174,6 +178,7 @@ function ScoresPhase({
   previewPoints: Record<string, number>;
   matchupDetail: ReturnType<typeof getHoleMatchupDetail>;
   onSubmit: () => void;
+  onWolfDecision?: (partner: string | null, loneWolf: 'early' | 'late' | 'default' | null) => void;
   holeNum: number;
   wolf: string;
 }) {
@@ -190,10 +195,10 @@ function ScoresPhase({
     return (
       <div key={p} className="flex items-center gap-1.5 mb-2">
         <div className="flex-1 min-w-0">
-          <div className={`text-[15px] flex items-center gap-1
+          <div className={`text-base flex items-center gap-1
             ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-            {isWolf && <span className="text-[13px]">🐺</span>}
             {p}
+            {isWolf && <span className="text-[13px]">🐺</span>}
             {strokes > 0 && (
               <span className="inline-flex gap-0.5 ml-0.5">
                 {Array.from({ length: strokes }, (_, i) => (
@@ -313,9 +318,12 @@ function ScoresPhase({
 
       <div className="flex gap-2.5 mt-5">
         <Button
-          onClick={() => setHoleInput(prev =>
-            prev ? { ...prev, phase: 'wolf-decision', partner: null, loneWolf: null } : prev
-          )}
+          onClick={() => {
+            setHoleInput(prev =>
+              prev ? { ...prev, phase: 'wolf-decision', partner: null, loneWolf: null } : prev
+            );
+            onWolfDecision?.(null, null);
+          }}
           className="flex-1"
         >
           &larr; Back
