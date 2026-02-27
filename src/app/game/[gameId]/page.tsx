@@ -17,7 +17,7 @@ import { Button, Fade, Label, BottomSheet } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { StandingsView } from '@/components/game/standings-view';
 import { SkinsView } from '@/components/game/skins-view';
-import { LastHoleResult } from '@/components/game/last-hole-result';
+import { HoleResultDetail } from '@/components/game/hole-result-detail';
 import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 
 export default function GamePage() {
@@ -179,6 +179,10 @@ function GameView({
   useEffect(() => {
     setWolfDecision(null);
     setWolfPickerOpen(true);
+    if (isScorekeeper && game.pendingWolfDecision) {
+      setGame({ ...game, pendingWolfDecision: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentHole]);
 
   // Keep spectators on the latest hole as scores come in
@@ -196,6 +200,22 @@ function GameView({
   const wolfName = game.players[wolfIdx];
   const holeInfo = activeHoleNum <= 18 ? game.course.holes[activeHoleNum - 1] : null;
   const strokesThisHole = activeHoleNum <= 18 ? getAllStrokesForHole(game, activeHoleNum) : {};
+
+  // Sync wolf decision to game state so spectators see it in real-time
+  const syncWolfDecision = useCallback((decision: { partner: string | null; loneWolf: LoneWolfType | null }) => {
+    setWolfDecision(decision);
+    if (isScorekeeper) {
+      setGame({
+        ...game,
+        pendingWolfDecision: {
+          holeNum: currentHole,
+          wolf: wolfName,
+          partner: decision.partner,
+          loneWolf: decision.loneWolf,
+        },
+      });
+    }
+  }, [isScorekeeper, game, currentHole, wolfName, setGame]);
 
   // Players in order of play: non-wolf in tee rotation order, wolf always last
   const orderedPlayers = useMemo(() => {
@@ -282,7 +302,7 @@ function GameView({
       updatedHoles = [...game.holes, newHole];
     }
 
-    const updatedGame = { ...game, holes: updatedHoles };
+    const updatedGame = { ...game, holes: updatedHoles, pendingWolfDecision: null };
     if (!editingHoleNum && currentHole >= 18) updatedGame.status = 'complete';
 
     setGame(updatedGame);
@@ -546,7 +566,7 @@ function GameView({
                           <button
                             key={p}
                             onClick={() => {
-                              setWolfDecision({ partner: p, loneWolf: null });
+                              syncWolfDecision({ partner: p, loneWolf: null });
                               setWolfPickerOpen(false);
                             }}
                             className={`flex-1 min-w-0 py-2.5 px-3 rounded-full border font-body text-[14px] font-medium cursor-pointer
@@ -580,7 +600,7 @@ function GameView({
                           <button
                             key={opt.type}
                             onClick={() => {
-                              setWolfDecision({ partner: null, loneWolf: opt.type });
+                              syncWolfDecision({ partner: null, loneWolf: opt.type });
                               setWolfPickerOpen(false);
                             }}
                             className={`flex-1 min-w-0 py-2 px-2 rounded-full border text-[12px] font-mono font-semibold cursor-pointer
@@ -597,13 +617,72 @@ function GameView({
                 );
               })()}
 
+              {/* Spectator: show pending wolf decision from scorekeeper */}
+              {isSpectator && game.pendingWolfDecision?.holeNum === currentHole && (() => {
+                const d = game.pendingWolfDecision;
+                const isLone = !!d.loneWolf;
+                const wolfTeam = isLone ? [d.wolf] : [d.wolf, d.partner!];
+                const opponents = game.players.filter(p => !wolfTeam.includes(p));
+
+                return (
+                  <div className="mb-4">
+                    {/* Wolf team */}
+                    <div className="bg-wolf-orange-bg rounded-xl border border-wolf-orange/20 p-3.5 mb-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="text-xs font-mono text-wolf-orange font-semibold tracking-[1.5px] flex items-center gap-1.5">
+                          🐺 {isLone ? 'LONE WOLF' : 'WOLF TEAM'}
+                        </div>
+                        {isLone && (
+                          <span className="text-[11px] font-mono text-wolf-orange bg-wolf-orange/10 py-0.5 px-2 rounded">
+                            +{LONE_WOLF_POINTS[d.loneWolf!]} to win
+                          </span>
+                        )}
+                      </div>
+                      {wolfTeam.map((p, i) => (
+                        <div key={p} className={`flex items-center gap-1.5 py-1.5
+                          ${i > 0 ? 'border-t border-wolf-orange/10' : ''}`}>
+                          {p === d.wolf && <span className="text-[13px]">🐺</span>}
+                          <span className={`text-[15px] ${p === d.wolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
+                            {p}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* VS divider */}
+                    <div className="text-center py-1 mb-3 relative">
+                      <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
+                      <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
+                        VS
+                      </span>
+                    </div>
+
+                    {/* Opponents */}
+                    <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
+                      <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-1.5">
+                        {isLone ? 'THE FIELD' : 'OPPONENTS'}
+                      </div>
+                      {opponents.map((p, i) => (
+                        <div key={p} className={`py-1.5 ${i > 0 ? 'border-t border-wolf-border' : ''}`}>
+                          <span className="text-[15px] text-wolf-text">{p}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-center text-[13px] text-wolf-text-muted font-mono">
+                      Waiting for scores...
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Quick standings (with optional skins tab) */}
               <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
 
               {/* Viewing a completed hole */}
               {game.holes.some(h => h.holeNum === currentHole) && (
                 <div className="mb-4">
-                  <LastHoleResult hole={game.holes.find(h => h.holeNum === currentHole)!} />
+                  <HoleResultDetail game={game} hole={game.holes.find(h => h.holeNum === currentHole)!} />
                   {isScorekeeper && (
                     <Button onClick={() => editHole(currentHole)} className="mt-2">
                       ✎ Edit Hole {currentHole}
