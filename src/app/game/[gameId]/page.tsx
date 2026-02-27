@@ -23,34 +23,57 @@ export default function GamePage() {
   const router = useRouter();
   const params = useParams();
   const gameId = params.gameId as string;
-  const { game, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame } = useGame();
-  const [fetchingRemote, setFetchingRemote] = useState(false);
+  const { game: contextGame, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame } = useGame();
+
+  // Local game state for spectators — separate from context to avoid the isSpectator/join dance
+  const [localGame, setLocalGame] = useState<Game | null>(null);
+  const [loading, setLoading] = useState(false);
   const hasFetched = useRef(false);
   const [watcherCount, setWatcherCount] = useState(0);
 
-  // If no game in context (e.g. page refresh as spectator), try fetching from Supabase
-  // Runs once on mount — `game` is deliberately excluded from deps to prevent re-fetch loops.
+  // Determine effective game: scorekeeper uses context game, everyone else uses local
+  const game = isScorekeeper ? contextGame : (localGame ?? contextGame);
+  const isEffectiveSpectator = !isScorekeeper;
+
+  // Fetch from Supabase for non-scorekeepers (on mount, or if no game in context)
   useEffect(() => {
-    if (hasFetched.current || isScorekeeper) return;
-    if (game) { hasFetched.current = true; return; }
+    if (isScorekeeper || hasFetched.current) return;
     hasFetched.current = true;
-    let cancelled = false;
-    setFetchingRemote(true);
+    setLoading(true);
     supabase
       .from('games')
       .select('state')
       .eq('id', gameId)
       .single()
       .then(({ data }) => {
-        if (cancelled) return;
         if (data?.state) {
+          setLocalGame(data.state as Game);
+          // Also update context for backwards compat (join page, home screen, etc.)
           spectateGame(data.state as Game);
-        } else {
-          router.push('/');
         }
-        setFetchingRemote(false);
+        setLoading(false);
       });
-    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, isScorekeeper]);
+
+  // Realtime subscription — owned by GamePage for spectators, not the provider
+  useEffect(() => {
+    if (isScorekeeper) return; // scorekeeper doesn't need this
+
+    const channel = supabase
+      .channel(`game-spectator-${gameId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
+        (payload) => {
+          const newState = (payload.new as { state: Game }).state;
+          setLocalGame(newState);
+          setGame(newState); // keep context in sync
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, isScorekeeper]);
 
@@ -78,7 +101,7 @@ export default function GamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, game?.id]);
 
-  if (fetchingRemote) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <span className="text-wolf-text-muted font-mono text-sm">Loading game...</span>
@@ -87,16 +110,20 @@ export default function GamePage() {
   }
 
   if (!game) {
-    router.push('/');
-    return null;
+    // Don't redirect immediately — wait a beat for the fetch
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <span className="text-wolf-text-muted font-mono text-sm">Loading game...</span>
+      </div>
+    );
   }
 
   return (
     <GameView
       game={game}
-      setGame={setGame}
+      setGame={isScorekeeper ? setGame : setLocalGame}
       isScorekeeper={isScorekeeper}
-      isSpectator={isSpectator}
+      isSpectator={isEffectiveSpectator}
       completeRound={completeRound}
       abandonGame={abandonGame}
       leaveSpectator={leaveSpectator}
