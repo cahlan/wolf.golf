@@ -14,8 +14,8 @@ test.describe('Score a hole', () => {
     // Wolf badge visible (wolf rotation: position = (16-1) % 4 = 3 → Shane for hole 16)
     await expect(page.locator('text=🐺').first()).toBeVisible();
 
-    // WHO POPS THIS HOLE section
-    await expect(page.getByText('WHO POPS THIS HOLE')).toBeVisible();
+    // Play order / strokes section
+    await expect(page.getByText('PLAY ORDER')).toBeVisible();
 
     // Players visible in the strokes section
     for (const name of ['Lance', 'Cahlan', 'Brad', 'Shane']) {
