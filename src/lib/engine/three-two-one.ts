@@ -20,15 +20,15 @@ export function calculateThreeTwoOneHolePoints(hole: CompletedHole): Record<stri
     // All three tie → 2 each
     sorted.forEach(p => (points[p.name] = 2));
   } else if (a.net === b.net) {
-    // Two tie for best → (3+2)/2 = 2.5 each, worst gets 1
-    points[a.name] = 2.5;
-    points[b.name] = 2.5;
-    points[c.name] = 1;
-  } else if (b.net === c.net) {
-    // Two tie for worst → best gets 3, (2+1)/2 = 1.5 each
+    // Two tie for best → both get 3, worst gets 0 (still totals 6)
     points[a.name] = 3;
-    points[b.name] = 1.5;
-    points[c.name] = 1.5;
+    points[b.name] = 3;
+    points[c.name] = 0;
+  } else if (b.net === c.net) {
+    // Two tie for worst → best gets 4, tied players get 1 each (still totals 6)
+    points[a.name] = 4;
+    points[b.name] = 1;
+    points[c.name] = 1;
   } else {
     // No ties → 3, 2, 1
     points[a.name] = 3;
@@ -54,9 +54,9 @@ export function getThreeTwoOneMatchupDetail(hole: CompletedHole): ThreeTwoOneMat
   if (a.netScore === b.netScore && b.netScore === c.netScore) {
     summary = 'All square — 2 pts each';
   } else if (a.netScore === b.netScore) {
-    summary = `${a.name} & ${b.name} tie for best — 2.5 each`;
+    summary = `${a.name} & ${b.name} tie for best — 3 each`;
   } else if (b.netScore === c.netScore) {
-    summary = `${a.name} takes it — ${b.name} & ${c.name} split 2nd/3rd`;
+    summary = `${a.name} takes it — ${b.name} & ${c.name} tie for worst (1 each)`;
   } else {
     summary = `${a.name} takes 3, ${b.name} takes 2, ${c.name} takes 1`;
   }
