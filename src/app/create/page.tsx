@@ -124,7 +124,7 @@ export default function CreateGamePage() {
 
     setGame(g);
     setIsScorekeeper(true);
-    router.push(`/game/${g.id}`);
+    router.push(`/game/${g.id}?keeper=1`);
   }
 
   function handleCourseNext() {

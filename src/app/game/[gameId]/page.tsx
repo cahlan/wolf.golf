@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -11,6 +11,7 @@ import {
   getAllStrokesForHole,
   getPlayerStrokesOnHole,
   getTeamsForHole,
+  getTeeOrderForHole,
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
@@ -28,14 +29,31 @@ import { ScorecardSheet } from '@/components/game/scorecard-sheet';
 export default function GamePage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const gameId = params.gameId as string;
-  const { game: contextGame, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame } = useGame();
+  const { game: contextGame, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame, resumeGame, setIsScorekeeper } = useGame();
 
   // Local game state for spectators — separate from context to avoid the isSpectator/join dance
   const [localGame, setLocalGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(false);
   const hasFetched = useRef(false);
   const [watcherCount, setWatcherCount] = useState(0);
+
+  // Attempt to restore scorekeeper mode after refresh.
+  // If the URL has ?keeper=1 OR we have an active game in localStorage matching this id,
+  // set scorekeeper=true so we don't auto-join as spectator.
+  useEffect(() => {
+    if (isScorekeeper) return;
+
+    const wantsKeeper = searchParams.get('keeper') === '1';
+    const active = resumeGame();
+    const canResumeThisGame = !!active && active.id === gameId;
+
+    if (wantsKeeper || canResumeThisGame) {
+      setIsScorekeeper(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
 
   // Determine effective game: scorekeeper uses context game, everyone else uses local
   const game = isScorekeeper ? contextGame : (localGame ?? contextGame);

@@ -24,24 +24,24 @@ function makeGame(overrides?: Partial<Game>): Game {
 }
 
 describe('getTeeOrderForHole', () => {
-  it('setup order defines wolf rotation; wolf hits last; others follow cyclic order starting after the wolf', () => {
+  it('setup order defines wolf rotation; wolf hits first; others follow cyclic order starting after the wolf', () => {
     const game = makeGame({ startingHole: 1, lastPlaceWolf: false });
 
     // With wolfOrder=[A,B,C,D]:
-    // Hole 1 wolf = A, so A hits last; play order starts after A.
-    expect(getTeeOrderForHole(game, 1)).toEqual(['B', 'C', 'D', 'A']);
+    // Hole 1 wolf = A, so A hits first; order follows after A.
+    expect(getTeeOrderForHole(game, 1)).toEqual(['A', 'B', 'C', 'D']);
 
     // Hole 2 wolf = B
-    expect(getTeeOrderForHole(game, 2)).toEqual(['C', 'D', 'A', 'B']);
+    expect(getTeeOrderForHole(game, 2)).toEqual(['B', 'C', 'D', 'A']);
 
     // Hole 3 wolf = C
-    expect(getTeeOrderForHole(game, 3)).toEqual(['D', 'A', 'B', 'C']);
+    expect(getTeeOrderForHole(game, 3)).toEqual(['C', 'D', 'A', 'B']);
 
     // Hole 4 wolf = D
-    expect(getTeeOrderForHole(game, 4)).toEqual(['A', 'B', 'C', 'D']);
+    expect(getTeeOrderForHole(game, 4)).toEqual(['D', 'A', 'B', 'C']);
 
     // Hole 5 cycles back to wolf = A
-    expect(getTeeOrderForHole(game, 5)).toEqual(['B', 'C', 'D', 'A']);
+    expect(getTeeOrderForHole(game, 5)).toEqual(['A', 'B', 'C', 'D']);
   });
 
   it('respects startingHole offset (wolf rotation uses startingHole)', () => {
@@ -49,7 +49,7 @@ describe('getTeeOrderForHole', () => {
 
     // With startingHole=3 and wolfOrder=[A,B,C,D]:
     // hole 3 wolf = A, hole 4 wolf = B
-    expect(getTeeOrderForHole(game, 3)).toEqual(['B', 'C', 'D', 'A']);
-    expect(getTeeOrderForHole(game, 4)).toEqual(['C', 'D', 'A', 'B']);
+    expect(getTeeOrderForHole(game, 3)).toEqual(['A', 'B', 'C', 'D']);
+    expect(getTeeOrderForHole(game, 4)).toEqual(['B', 'C', 'D', 'A']);
   });
 });
