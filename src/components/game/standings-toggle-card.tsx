@@ -12,7 +12,8 @@ interface StandingsToggleCardProps {
 
 export function StandingsToggleCard({ game, standings, skinsData }: StandingsToggleCardProps) {
   const isSix = (game.gameType ?? 'wolf') === 'six';
-  const gameLabel = isSix ? '6x6x6' : 'Wolf';
+  const isThreeTwoOne = game.gameType === 'three-two-one';
+  const gameLabel = isThreeTwoOne ? '3-2-1' : isSix ? '6x6x6' : 'Wolf';
   const [tab, setTab] = useState<'wolf' | 'skins'>('wolf');
   const skinsEnabled = game.skinsEnabled !== false;
 

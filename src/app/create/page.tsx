@@ -27,6 +27,8 @@ export default function CreateGamePage() {
   const [skinsValue, setSkinsValue] = useState(5);
   const [wolfOrder, setWolfOrder] = useState([0, 1, 2, 3]);
   const [gameType, setGameType] = useState<GameType>('wolf');
+  const isThreeTwoOne = gameType === 'three-two-one';
+  const playerCount = isThreeTwoOne ? 3 : 4;
   const [teamSegments, setTeamSegments] = useState<[number, number][]>(() => generateDefaultSegments());
   const [suggestions] = useState(() => getSuggestedPlayers());
 
@@ -58,7 +60,8 @@ export default function CreateGamePage() {
   );
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select');
 
-  const allPlayersFilled = players.every(p => p.trim().length > 0);
+  const activePlayers = players.slice(0, playerCount);
+  const allPlayersFilled = activePlayers.every(p => p.trim().length > 0);
   const courseValid = !!selectedCourse || (
     courseName.trim() !== '' && courseHoles.every(h => h.strokeIndex >= 1 && h.strokeIndex <= 18)
   );
@@ -89,9 +92,9 @@ export default function CreateGamePage() {
   }
 
   function handleStart() {
+    const trimmedPlayers = activePlayers.map(p => p.trim());
     const hcaps: Record<string, number> = {};
-    players.forEach((p, i) => {
-      const name = p.trim();
+    trimmedPlayers.forEach((name, i) => {
       hcaps[name] = handicaps[i];
       savePlayerCache(name, handicaps[i]);
     });
@@ -107,7 +110,7 @@ export default function CreateGamePage() {
 
     const g = createGame({
       gameType,
-      players: players.map(p => p.trim()),
+      players: trimmedPlayers,
       buyIn,
       handicaps: hcaps,
       wolfOrder: gameType === 'wolf' ? wolfOrder : undefined,
@@ -118,7 +121,7 @@ export default function CreateGamePage() {
       startingHole: gameType === 'wolf' ? startingHole : undefined,
       lastPlaceWolf: gameType === 'wolf' ? lastPlaceWolf : undefined,
       lastPlaceWolfStartHole: gameType === 'wolf' ? lastPlaceWolfStartHole : undefined,
-      payoutStructure,
+      payoutStructure: isThreeTwoOne ? undefined : payoutStructure,
       skinsCarryover,
     });
 
@@ -132,7 +135,11 @@ export default function CreateGamePage() {
       const course = createCourse(courseName.trim(), courseHoles);
       setSelectedCourse(course);
     }
-    setStep(2);
+    if (isThreeTwoOne) {
+      handleStart();
+    } else {
+      setStep(2);
+    }
   }
 
   return (
@@ -141,7 +148,10 @@ export default function CreateGamePage() {
 
       {/* Step indicators */}
       <div className="flex gap-1 mb-5 justify-center">
-        {['Players', 'Course', gameType === 'wolf' ? 'Wolf Order' : 'Teams'].map((label, i) => (
+        {(isThreeTwoOne
+          ? ['Players', 'Course']
+          : ['Players', 'Course', gameType === 'wolf' ? 'Wolf Order' : 'Teams']
+        ).map((label, i, arr) => (
           <div key={i} className="flex items-center gap-1">
             <div
               className={`w-2 h-2 rounded-full transition-colors duration-200
@@ -151,7 +161,7 @@ export default function CreateGamePage() {
               ${i <= step ? 'text-wolf-accent' : 'text-wolf-text-muted'}`}>
               {label}
             </span>
-            {i < 2 && <span className="text-wolf-border mx-1">—</span>}
+            {i < arr.length - 1 && <span className="text-wolf-border mx-1">—</span>}
           </div>
         ))}
       </div>
@@ -159,15 +169,22 @@ export default function CreateGamePage() {
       {step === 0 && (
         <>
         {/* Game type selector */}
-        <div className="flex gap-2.5 mb-5">
+        <div className="flex gap-2 mb-5">
           {([
-            { type: 'wolf' as const, label: 'Wolf', emoji: '🐺' },
-            { type: 'six' as const, label: '6x6x6', emoji: '🤝' },
+            { type: 'wolf' as const, label: 'Wolf', emoji: '🐺', desc: 'Pick your partner each hole' },
+            { type: 'six' as const, label: '6x6x6', emoji: '🤝', desc: 'Fixed 2v2, rotating every 6' },
+            { type: 'three-two-one' as const, label: '3-2-1', emoji: '🏅', desc: '3 players, ranked each hole' },
           ]).map(opt => (
             <button
               key={opt.type}
-              onClick={() => setGameType(opt.type)}
-              className={`flex-1 py-3 px-4 rounded-xl border-2 text-center cursor-pointer
+              onClick={() => {
+                setGameType(opt.type);
+                if (opt.type === 'three-two-one') {
+                  setPlayers(p => [p[0], p[1], p[2], '']);
+                  setHandicaps(h => [h[0], h[1], h[2], 0]);
+                }
+              }}
+              className={`flex-1 py-3 px-2.5 rounded-xl border-2 text-center cursor-pointer
                 transition-colors duration-150
                 ${gameType === opt.type
                   ? 'border-wolf-accent bg-wolf-accent-bg'
@@ -178,7 +195,7 @@ export default function CreateGamePage() {
                 {opt.label}
               </div>
               <div className="text-[11px] text-wolf-text-muted mt-0.5">
-                {opt.type === 'wolf' ? 'Pick your partner each hole' : 'Fixed 2v2, rotating every 6'}
+                {opt.desc}
               </div>
             </button>
           ))}
@@ -187,7 +204,7 @@ export default function CreateGamePage() {
       )}
       {step === 0 && (
         <PlayersStep
-          players={players}
+          players={activePlayers}
           handicaps={handicaps}
           buyIn={buyIn}
           skinsEnabled={skinsEnabled}
@@ -200,6 +217,7 @@ export default function CreateGamePage() {
           onSkinsValueChange={setSkinsValue}
           onNext={() => setStep(1)}
           allPlayersFilled={allPlayersFilled}
+          playerCount={playerCount}
         />
       )}
 
@@ -218,7 +236,7 @@ export default function CreateGamePage() {
           strokeIndexesValid={strokeIndexesValid}
           onBack={() => setStep(0)}
           onNext={handleCourseNext}
-          nextLabel={gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
+          nextLabel={isThreeTwoOne ? 'Start Round' : gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
         />
       )}
 

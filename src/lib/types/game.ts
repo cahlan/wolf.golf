@@ -14,7 +14,7 @@ export interface PlayerProfile {
 }
 
 export type LoneWolfType = 'early' | 'late' | 'default';
-export type GameType = 'wolf' | 'six';
+export type GameType = 'wolf' | 'six' | 'three-two-one';
 export type GameStatus = 'active' | 'complete' | 'abandoned';
 
 export interface PendingWolfDecision {
@@ -125,6 +125,17 @@ export interface SixHoleMatchupDetail {
     teamBNet: number;
     result: 'teamA' | 'teamB' | 'push';
   };
+  summary: string;
+}
+
+export interface ThreeTwoOneRanking {
+  name: string;
+  netScore: number;
+  points: number;
+}
+
+export interface ThreeTwoOneMatchupDetail {
+  rankings: ThreeTwoOneRanking[];
   summary: string;
 }
 

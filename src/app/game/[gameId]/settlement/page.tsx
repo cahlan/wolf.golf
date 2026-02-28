@@ -70,7 +70,7 @@ export default function SettlementPage() {
         {/* Final standings */}
         <Label className="mb-2">FINAL STANDINGS</Label>
         {settlement.standings.map((s, i) => {
-          const medals = ['🥇', '🥈', '', ''];
+          const medals = game.players.length === 3 ? ['🥇', '🥈', '🥉'] : ['🥇', '🥈', '', ''];
           const wolfAmt = settlement.wolfNet[s.name];
           return (
             <div
@@ -148,7 +148,7 @@ export default function SettlementPage() {
         </div>
 
         {/* Net totals */}
-        <Label className="mb-2">NET TOTAL{game.skinsEnabled !== false ? ` (${(game.gameType ?? 'wolf') === 'six' ? 'GAME' : 'WOLF'} + SKINS)` : ''}</Label>
+        <Label className="mb-2">NET TOTAL{game.skinsEnabled !== false ? ` (${game.gameType === 'three-two-one' ? 'GAME' : (game.gameType ?? 'wolf') === 'six' ? 'GAME' : 'WOLF'} + SKINS)` : ''}</Label>
         {game.players.map(p => {
           const net = settlement.totalNet[p];
           return (

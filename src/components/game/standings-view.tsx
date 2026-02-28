@@ -11,9 +11,11 @@ interface StandingsViewProps {
 
 export function StandingsView({ game, standings }: StandingsViewProps) {
   const isSix = (game.gameType ?? 'wolf') === 'six';
+  const isThreeTwoOne = game.gameType === 'three-two-one';
+  const title = isThreeTwoOne ? '3-2-1 Standings' : isSix ? '6x6x6 Standings' : 'Wolf Standings';
   return (
     <Fade>
-      <Title>{isSix ? '6x6x6 Standings' : 'Wolf Standings'}</Title>
+      <Title>{title}</Title>
       {standings.map((s, i) => (
         <div
           key={s.name}
