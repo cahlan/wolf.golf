@@ -40,11 +40,19 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
           <thead>
             <tr className="bg-wolf-card">
               <th className="py-2 px-2.5 text-left text-wolf-text-muted font-medium">Player</th>
-              {holes.map(h => (
-                <th key={h} className="py-2 px-2 text-center text-wolf-text-sec font-medium text-[11px] whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
+              {holes.map((hNum) => {
+                const hole = holeByNum.get(hNum);
+                const par = hole?.par;
+                return (
+                  <th
+                    key={hNum}
+                    className="py-2 px-2 text-center text-wolf-text-sec font-medium text-[11px] whitespace-nowrap"
+                  >
+                    <div className="leading-none">{hNum}</div>
+                    <div className="mt-1 text-[10px] text-wolf-text-muted leading-none">P{par ?? '·'}</div>
+                  </th>
+                );
+              })}
               <th className="py-2 px-2 text-center text-wolf-text-sec font-medium text-[11px] whitespace-nowrap">Tot</th>
             </tr>
           </thead>
