@@ -48,8 +48,8 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
                     key={hNum}
                     className="py-2 px-2 text-center text-wolf-text-sec font-medium text-[11px] whitespace-nowrap"
                   >
-                    <div className="leading-none">{hNum}</div>
-                    <div className="mt-1 text-[10px] text-wolf-text-muted leading-none">P{par ?? '·'}</div>
+                    <div className="leading-none pb-1 border-b border-wolf-border">{hNum}</div>
+                    <div className="mt-1 text-[10px] text-wolf-text-muted leading-none">{par ?? '·'}</div>
                   </th>
                 );
               })}
