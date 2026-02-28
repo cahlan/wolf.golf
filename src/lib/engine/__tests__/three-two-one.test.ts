@@ -43,11 +43,11 @@ describe('3-2-1 scoring', () => {
     expect(pts.A + pts.B + pts.C).toBe(6);
   });
 
-  it('two tie for worst → 6/0/0 (total 6)', () => {
+  it('two tie for worst → 4/1/1 (total 6)', () => {
     const pts = calculateThreeTwoOneHolePoints(hole({ A: 3, B: 4, C: 4 }));
-    expect(pts.A).toBe(6);
-    expect(pts.B).toBe(0);
-    expect(pts.C).toBe(0);
+    expect(pts.A).toBe(4);
+    expect(pts.B).toBe(1);
+    expect(pts.C).toBe(1);
     expect(pts.A + pts.B + pts.C).toBe(6);
   });
 });

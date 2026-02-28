@@ -25,10 +25,10 @@ export function calculateThreeTwoOneHolePoints(hole: CompletedHole): Record<stri
     points[b.name] = 3;
     points[c.name] = 0;
   } else if (b.net === c.net) {
-    // Two tie for worst → best gets 6, tied players get 0 (still totals 6)
-    points[a.name] = 6;
-    points[b.name] = 0;
-    points[c.name] = 0;
+    // Two tie for worst → best gets 4, tied players get 1 each (still totals 6)
+    points[a.name] = 4;
+    points[b.name] = 1;
+    points[c.name] = 1;
   } else {
     // No ties → 3, 2, 1
     points[a.name] = 3;
@@ -56,7 +56,7 @@ export function getThreeTwoOneMatchupDetail(hole: CompletedHole): ThreeTwoOneMat
   } else if (a.netScore === b.netScore) {
     summary = `${a.name} & ${b.name} tie for best — 3 each`;
   } else if (b.netScore === c.netScore) {
-    summary = `${a.name} takes it — ${b.name} & ${c.name} tie for worst`;
+    summary = `${a.name} takes it — ${b.name} & ${c.name} tie for worst (1 each)`;
   } else {
     summary = `${a.name} takes 3, ${b.name} takes 2, ${c.name} takes 1`;
   }
