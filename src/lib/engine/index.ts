@@ -19,3 +19,7 @@ export {
   generateDefaultSegments,
   shuffleSegments,
 } from './six';
+export {
+  calculateThreeTwoOneHolePoints,
+  getThreeTwoOneMatchupDetail,
+} from './three-two-one';

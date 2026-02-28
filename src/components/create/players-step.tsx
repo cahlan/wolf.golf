@@ -17,17 +17,18 @@ interface PlayersStepProps {
   onSkinsValueChange: (value: number) => void;
   onNext: () => void;
   allPlayersFilled: boolean;
+  playerCount?: number;
 }
 
 export function PlayersStep({
   players, handicaps, buyIn, skinsEnabled, skinsValue, suggestions,
   onPlayerChange, onHandicapChange, onBuyInChange, onSkinsEnabledChange, onSkinsValueChange,
-  onNext, allPlayersFilled,
+  onNext, allPlayersFilled, playerCount = 4,
 }: PlayersStepProps) {
   return (
     <Fade>
       <Title>Players</Title>
-      <Sub>Enter all four players and their handicaps.</Sub>
+      <Sub>Enter all {playerCount === 3 ? 'three' : 'four'} players and their handicaps.</Sub>
 
       {players.map((p, i) => (
         <div key={i} className="flex gap-2 mb-2 items-center">

@@ -39,7 +39,7 @@ function HomeContent() {
             Settle the<br />score.
           </h1>
           <p className="text-wolf-text-sec mt-3.5 text-[15px] leading-relaxed">
-            Wolf &middot; Skins &middot; Settlements<br />No more napkin math.
+            Wolf &middot; 3-2-1 &middot; 6x6x6 &middot; Skins<br />No more napkin math.
           </p>
         </div>
 
