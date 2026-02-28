@@ -11,6 +11,7 @@ import {
   getAllStrokesForHole,
   getPlayerStrokesOnHole,
   getTeamsForHole,
+  getTeeOrderForHole,
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
