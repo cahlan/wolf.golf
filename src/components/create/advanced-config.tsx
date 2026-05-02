@@ -59,7 +59,6 @@ export function AdvancedConfig({
 }: AdvancedConfigProps) {
   const isWolf = gameType === 'wolf';
   const isThreeTwoOne = gameType === 'three-two-one';
-  const totalHoles = 19 - startingHole;
   const [expanded, setExpanded] = useState(isThreeTwoOne); // Auto-expand for 3-2-1
 
   return (
@@ -83,9 +82,10 @@ export function AdvancedConfig({
               <div className="text-left mb-2">
                 <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
                 <span className="text-wolf-text-muted text-[12px] font-body">
-                  {startingHole === 1
-                    ? `Playing 18 holes`
-                    : `Playing ${totalHoles} holes (Hole ${startingHole} → 18)`}
+                  {(() => {
+                    const lastHole = ((startingHole + 16) % 18) + 1;
+                    return `Playing 18 holes (${startingHole} → ${lastHole})`;
+                  })()}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export function AdvancedConfig({
               </button>
               {lastPlaceWolf && (
                 <div className="mt-3 flex items-center gap-3">
-                  <Label className="text-[11px] shrink-0">STARTING ON HOLE:</Label>
+                  <Label className="text-[11px] shrink-0">FROM ROUND POS:</Label>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="score"

@@ -12,6 +12,7 @@ import {
   getPlayerStrokesOnHole,
   getTeamsForHole,
   getTeeOrderForHole,
+  courseHoleForRoundPos,
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
@@ -188,7 +189,11 @@ function GameView({
 }) {
   const router = useRouter();
   const startHole = game.startingHole ?? 1;
-  const [currentHole, setCurrentHole] = useState(() => startHole + game.holes.length);
+  // roundPos: 1-based position in the round (1 = first hole played, 18 = last)
+  // courseHole: the actual course hole number (1-18), wrapping after 18
+  const [roundPos, setRoundPos] = useState(() => game.holes.length + 1);
+  const currentHole = courseHoleForRoundPos(startHole, roundPos);
+  const roundComplete = game.holes.length >= 18;
   const [tab, setTab] = useState<'play' | 'standings' | 'skins'>('play');
   const [copied, setCopied] = useState(false);
   const [showScorecard, setShowScorecard] = useState(false);
@@ -220,25 +225,26 @@ function GameView({
   // Keep spectators on the latest hole as scores come in
   useEffect(() => {
     if (isSpectator) {
-      setCurrentHole(startHole + game.holes.length);
+      setRoundPos(game.holes.length + 1);
     }
-  }, [isSpectator, game.holes.length, startHole]);
+  }, [isSpectator, game.holes.length]);
 
   const activeHoleNum = editingHoleNum || currentHole;
+  // editingHoleNum is already a course hole number; currentHole is derived from roundPos
   const isSix = (game.gameType ?? 'wolf') === 'six';
   const isThreeTwoOne = game.gameType === 'three-two-one';
   const isWolfGame = !isSix && !isThreeTwoOne;
 
   const standings = useMemo(() => calculateStandings(game), [game]);
   const skinsData = useMemo(() => calculateSkins(game), [game]);
-  const wolfIdx = isWolfGame && activeHoleNum <= 18 ? getWolfForHole(game, activeHoleNum) : 0;
+  const wolfIdx = isWolfGame ? getWolfForHole(game, activeHoleNum) : 0;
   const wolfName = game.players[wolfIdx];
-  const holeInfo = activeHoleNum <= 18 ? game.course.holes[activeHoleNum - 1] : null;
-  const strokesThisHole = activeHoleNum <= 18 ? getAllStrokesForHole(game, activeHoleNum) : {};
+  const holeInfo = game.course.holes[activeHoleNum - 1] ?? null;
+  const strokesThisHole = getAllStrokesForHole(game, activeHoleNum);
 
   // 6x6x6: current teams for the active hole
   const sixTeams = useMemo(() => {
-    if (!isSix || activeHoleNum > 18) return null;
+    if (!isSix) return null;
     return getTeamsForHole(game, activeHoleNum);
   }, [isSix, game, activeHoleNum]);
 
@@ -377,17 +383,17 @@ function GameView({
     }
 
     const updatedGame = { ...game, holes: updatedHoles, pendingWolfDecision: null };
-    if (!editingHoleNum && currentHole >= 18) updatedGame.status = 'complete';
+    if (!editingHoleNum && updatedHoles.length >= 18) updatedGame.status = 'complete';
 
     setGame(updatedGame);
     setHoleInput(null);
     setEditingHoleNum(null);
 
     if (!editingHoleNum) {
-      if (currentHole >= 18) {
+      if (updatedHoles.length >= 18) {
         handleComplete(updatedGame);
       } else {
-        setCurrentHole(currentHole + 1);
+        setRoundPos(p => p + 1);
       }
     }
   }
@@ -514,20 +520,20 @@ function GameView({
               {/* Hole navigation */}
               <div className="flex items-center justify-between mb-3">
                 <button
-                  onClick={() => setCurrentHole(h => Math.max(startHole, h - 1))}
-                  disabled={currentHole <= startHole}
+                  onClick={() => setRoundPos(p => Math.max(1, p - 1))}
+                  disabled={roundPos <= 1}
                   className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${currentHole <= startHole ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
+                    font-mono text-[13px] ${roundPos <= 1 ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
                 >
-                  &larr; {currentHole > startHole ? currentHole - 1 : ''}
+                  &larr; {roundPos > 1 ? courseHoleForRoundPos(startHole, roundPos - 1) : ''}
                 </button>
 
                 <div className="text-center">
                   <div className="text-xs text-wolf-text-muted font-mono mb-0.5">
-                    {game.holes.some(h => h.holeNum === currentHole) ? 'COMPLETED' : currentHole <= 18 ? 'NEXT UP' : 'DONE'}
+                    {game.holes.some(h => h.holeNum === currentHole) ? 'COMPLETED' : roundComplete ? 'DONE' : 'NEXT UP'}
                   </div>
                   <div className="text-[44px] font-extrabold font-display tracking-[-3px]">
-                    {currentHole <= 18 ? currentHole : '✓'}
+                    {roundComplete && roundPos > game.holes.length ? '✓' : currentHole}
                   </div>
                   {holeInfo && (
                     <div className="inline-flex gap-2.5 text-[13px] font-mono text-wolf-text-sec mt-0.5">
@@ -539,13 +545,13 @@ function GameView({
                 </div>
 
                 <button
-                  onClick={() => setCurrentHole(h => Math.min(startHole + game.holes.length, Math.min(19, h + 1)))}
-                  disabled={currentHole > 18 || currentHole > game.holes.length + startHole - 1}
+                  onClick={() => setRoundPos(p => Math.min(game.holes.length + 1, p + 1))}
+                  disabled={roundPos > game.holes.length}
                   className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${(currentHole > 18 || currentHole > game.holes.length + startHole - 1)
+                    font-mono text-[13px] ${roundPos > game.holes.length
                       ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
                 >
-                  {currentHole < 18 ? currentHole + 1 : ''} &rarr;
+                  {roundPos <= game.holes.length ? courseHoleForRoundPos(startHole, roundPos + 1) : ''} &rarr;
                 </button>
               </div>
 
@@ -568,7 +574,7 @@ function GameView({
               ) : isSix ? (
                 <>
                   {/* 6x6x6: Team matchup card */}
-                  {currentHole <= 18 && sixTeams && (
+                  {sixTeams && (
                     <>
                       <div className="text-center mb-3">
                         <span className="text-[11px] font-mono text-wolf-accent tracking-[1.5px]">
@@ -644,8 +650,7 @@ function GameView({
               ) : isThreeTwoOne ? (
                 <>
                   {/* 3-2-1: Player info card */}
-                  {currentHole <= 18 && (
-                    <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
+                  <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
                       <Label className="mb-2">PLAYERS</Label>
                       {game.players.map((p, idx) => {
                         const strokes = strokesThisHole[p] || 0;
@@ -679,7 +684,6 @@ function GameView({
                         );
                       })}
                     </div>
-                  )}
 
                   <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
                 </>
@@ -772,22 +776,19 @@ function GameView({
                   })() : (
                     <>
                       {/* Wolf badge */}
-                      {currentHole <= 18 && (
-                        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-wolf-orange-bg
-                          rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
-                          <span className="text-lg">🐺</span>
-                          <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
-                          {currentHole >= (game.lastPlaceWolfStartHole ?? 17) && (
-                            <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
-                              LAST PLACE
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex items-center justify-center gap-2 py-2 px-4 bg-wolf-orange-bg
+                        rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
+                        <span className="text-lg">🐺</span>
+                        <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
+                        {roundPos >= (game.lastPlaceWolfStartHole ?? 17) && (
+                          <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
+                            LAST PLACE
+                          </span>
+                        )}
+                      </div>
 
                       {/* WHO POPS */}
-                      {currentHole <= 18 && (
-                        <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
+                      <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
                           <Label className="mb-2">PLAY ORDER</Label>
                           {orderedPlayers.map((p, idx) => {
                             const strokes = strokesThisHole[p];
@@ -824,8 +825,7 @@ function GameView({
                               </div>
                             );
                           })}
-                        </div>
-                      )}
+                      </div>
 
                       {/* Quick standings (with optional skins tab) */}
                       <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
@@ -835,12 +835,12 @@ function GameView({
               )}
 
               {/* Score next hole button */}
-              {isScorekeeper && currentHole === startHole + game.holes.length && currentHole <= 18 && (
+              {isScorekeeper && roundPos === game.holes.length + 1 && !roundComplete && (
                 <Button variant="primary" onClick={beginHole}>
                   Score Hole {currentHole}
                 </Button>
               )}
-              {game.holes.length >= (19 - startHole) && (
+              {roundComplete && (
                 <Button variant="primary" onClick={() => handleComplete()} className="mt-2">
                   View Settlement &rarr;
                 </Button>
