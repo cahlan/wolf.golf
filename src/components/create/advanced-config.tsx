@@ -58,11 +58,11 @@ export function AdvancedConfig({
   onSkinsCarryoverChange,
 }: AdvancedConfigProps) {
   const isWolf = gameType === 'wolf';
-  const totalHoles = 19 - startingHole;
-  const [expanded, setExpanded] = useState(false);
+  const isThreeTwoOne = gameType === 'three-two-one';
+  const [expanded, setExpanded] = useState(isThreeTwoOne); // Auto-expand for 3-2-1
 
   return (
-    <div className="mt-6">
+    <div className={isThreeTwoOne ? 'mt-0' : 'mt-6'}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 text-wolf-text-muted text-sm font-body cursor-pointer
@@ -71,115 +71,122 @@ export function AdvancedConfig({
         <span className={`text-xs transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}>
           ▶
         </span>
-        Advanced options
+        {isThreeTwoOne ? 'Game Options' : 'Advanced options'}
       </button>
 
       {expanded && (
         <div className="mt-3 space-y-4">
-          {/* Starting hole — wolf only */}
-          {isWolf && <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
-            <div className="text-left mb-2">
-              <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
-              <span className="text-wolf-text-muted text-[12px] font-body">
-                {startingHole === 1
-                  ? `Playing 18 holes`
-                  : `Playing ${totalHoles} holes (Hole ${startingHole} → 18)`}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-[11px] shrink-0">START ON HOLE:</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="score"
-                  disabled={startingHole <= 1}
-                  onClick={() => onStartingHoleChange(Math.max(1, startingHole - 1))}
-                >
-                  −
-                </Button>
-                <span className="w-8 text-center text-wolf-text text-base font-mono">
-                  {startingHole}
-                </span>
-                <Button
-                  variant="score"
-                  disabled={startingHole >= 18}
-                  onClick={() => onStartingHoleChange(Math.min(18, startingHole + 1))}
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>}
-
-          {/* Last place wolf — wolf only */}
-          {isWolf && <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
-            <button
-              onClick={() => onLastPlaceWolfChange(!lastPlaceWolf)}
-              className="flex items-center justify-between w-full cursor-pointer bg-transparent border-none p-0"
-            >
-              <div className="text-left">
-                <span className="text-wolf-text text-[15px] font-body block">Last place wolf</span>
+          {/* Starting hole — wolf and 3-2-1 */}
+          {(isWolf || isThreeTwoOne) && (
+            <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+              <div className="text-left mb-2">
+                <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
                 <span className="text-wolf-text-muted text-[12px] font-body">
-                  Worst standing picks wolf on closing holes
+                  {(() => {
+                    const lastHole = ((startingHole + 16) % 18) + 1;
+                    return `Playing 18 holes (${startingHole} → ${lastHole})`;
+                  })()}
                 </span>
               </div>
-              <div className={`w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0 ml-3
-                ${lastPlaceWolf ? 'bg-wolf-accent' : 'bg-wolf-border'}`}>
-                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform duration-200
-                  ${lastPlaceWolf ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
-              </div>
-            </button>
-            {lastPlaceWolf && (
-              <div className="mt-3 flex items-center gap-3">
-                <Label className="text-[11px] shrink-0">STARTING ON HOLE:</Label>
+              <div className="flex items-center gap-3">
+                <Label className="text-[11px] shrink-0">START ON HOLE:</Label>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="score"
-                    disabled={lastPlaceWolfStartHole <= 1}
-                    onClick={() => onLastPlaceWolfStartHoleChange(Math.max(1, lastPlaceWolfStartHole - 1))}
+                    disabled={startingHole <= 1}
+                    onClick={() => onStartingHoleChange(Math.max(1, startingHole - 1))}
                   >
                     −
                   </Button>
                   <span className="w-8 text-center text-wolf-text text-base font-mono">
-                    {lastPlaceWolfStartHole}
+                    {startingHole}
                   </span>
                   <Button
                     variant="score"
-                    disabled={lastPlaceWolfStartHole >= 18}
-                    onClick={() => onLastPlaceWolfStartHoleChange(Math.min(18, lastPlaceWolfStartHole + 1))}
+                    disabled={startingHole >= 18}
+                    onClick={() => onStartingHoleChange(Math.min(18, startingHole + 1))}
                   >
                     +
                   </Button>
                 </div>
               </div>
-            )}
-          </div>}
-
-          {/* Payout structure */}
-          <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
-            <Label className="mb-2.5">PAYOUT STRUCTURE</Label>
-            <div className="flex gap-1.5">
-              {PAYOUT_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => onPayoutStructureChange(opt.value)}
-                  className={`flex-1 py-2.5 px-2 rounded-lg text-[13px] font-body cursor-pointer
-                    border transition-colors duration-150
-                    ${payoutStructure === opt.value
-                      ? 'bg-wolf-accent text-wolf-bg border-wolf-accent font-semibold'
-                      : 'bg-wolf-hover text-wolf-text border-wolf-border'
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
             </div>
-            <p className="mt-2 text-[12px] font-mono text-wolf-text-muted text-center">
-              {PAYOUT_OPTIONS.find(o => o.value === payoutStructure)?.getBreakdown(buyIn)}
-            </p>
-          </div>
+          )}
 
-          {/* Skins carryover */}
-          {skinsEnabled && (
+          {/* Last place wolf — wolf only */}
+          {isWolf && (
+            <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+              <button
+                onClick={() => onLastPlaceWolfChange(!lastPlaceWolf)}
+                className="flex items-center justify-between w-full cursor-pointer bg-transparent border-none p-0"
+              >
+                <div className="text-left">
+                  <span className="text-wolf-text text-[15px] font-body block">Last place wolf</span>
+                  <span className="text-wolf-text-muted text-[12px] font-body">
+                    Worst standing picks wolf on closing holes
+                  </span>
+                </div>
+                <div className={`w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0 ml-3
+                  ${lastPlaceWolf ? 'bg-wolf-accent' : 'bg-wolf-border'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform duration-200
+                    ${lastPlaceWolf ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                </div>
+              </button>
+              {lastPlaceWolf && (
+                <div className="mt-3 flex items-center gap-3">
+                  <Label className="text-[11px] shrink-0">FROM ROUND POS:</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="score"
+                      disabled={lastPlaceWolfStartHole <= 1}
+                      onClick={() => onLastPlaceWolfStartHoleChange(Math.max(1, lastPlaceWolfStartHole - 1))}
+                    >
+                      −
+                    </Button>
+                    <span className="w-8 text-center text-wolf-text text-base font-mono">
+                      {lastPlaceWolfStartHole}
+                    </span>
+                    <Button
+                      variant="score"
+                      disabled={lastPlaceWolfStartHole >= 18}
+                      onClick={() => onLastPlaceWolfStartHoleChange(Math.min(18, lastPlaceWolfStartHole + 1))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payout structure — wolf only */}
+          {isWolf && (
+            <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+              <Label className="mb-2.5">PAYOUT STRUCTURE</Label>
+              <div className="flex gap-1.5">
+                {PAYOUT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onPayoutStructureChange(opt.value)}
+                    className={`flex-1 py-2.5 px-2 rounded-lg text-[13px] font-body cursor-pointer
+                      border transition-colors duration-150
+                      ${payoutStructure === opt.value
+                        ? 'bg-wolf-accent text-wolf-bg border-wolf-accent font-semibold'
+                        : 'bg-wolf-hover text-wolf-text border-wolf-border'
+                      }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[12px] font-mono text-wolf-text-muted text-center">
+                {PAYOUT_OPTIONS.find(o => o.value === payoutStructure)?.getBreakdown(buyIn)}
+              </p>
+            </div>
+          )}
+
+          {/* Skins carryover — wolf only */}
+          {skinsEnabled && isWolf && (
             <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
               <button
                 onClick={() => onSkinsCarryoverChange(!skinsCarryover)}

@@ -118,7 +118,7 @@ export default function CreateGamePage() {
       skinsValue: skinsEnabled ? skinsValue : 0,
       course,
       teamSegments: gameType === 'six' ? teamSegments : undefined,
-      startingHole: gameType === 'wolf' ? startingHole : undefined,
+      startingHole: (gameType === 'wolf' || gameType === 'three-two-one') ? startingHole : undefined,
       lastPlaceWolf: gameType === 'wolf' ? lastPlaceWolf : undefined,
       lastPlaceWolfStartHole: gameType === 'wolf' ? lastPlaceWolfStartHole : undefined,
       payoutStructure: isThreeTwoOne ? undefined : payoutStructure,
@@ -135,11 +135,7 @@ export default function CreateGamePage() {
       const course = createCourse(courseName.trim(), courseHoles);
       setSelectedCourse(course);
     }
-    if (isThreeTwoOne) {
-      handleStart();
-    } else {
-      setStep(2);
-    }
+    setStep(2);
   }
 
   return (
@@ -149,7 +145,7 @@ export default function CreateGamePage() {
       {/* Step indicators */}
       <div className="flex gap-1 mb-5 justify-center">
         {(isThreeTwoOne
-          ? ['Players', 'Course']
+          ? ['Players', 'Course', 'Setup']
           : ['Players', 'Course', gameType === 'wolf' ? 'Wolf Order' : 'Teams']
         ).map((label, i, arr) => (
           <div key={i} className="flex items-center gap-1">
@@ -236,7 +232,7 @@ export default function CreateGamePage() {
           strokeIndexesValid={strokeIndexesValid}
           onBack={() => setStep(0)}
           onNext={handleCourseNext}
-          nextLabel={isThreeTwoOne ? 'Start Round' : gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
+          nextLabel={isThreeTwoOne ? 'Next: Setup' : gameType === 'wolf' ? 'Next: Wolf Order' : 'Next: Teams'}
         />
       )}
 
@@ -298,6 +294,47 @@ export default function CreateGamePage() {
             />
           }
         />
+      )}
+
+      {step === 2 && gameType === 'three-two-one' && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold text-wolf-text mb-4">Game Setup</h2>
+            <AdvancedConfig
+              gameType={gameType}
+              buyIn={buyIn}
+              startingHole={startingHole}
+              lastPlaceWolf={lastPlaceWolf}
+              lastPlaceWolfStartHole={lastPlaceWolfStartHole}
+              payoutStructure={payoutStructure}
+              skinsCarryover={skinsCarryover}
+              skinsEnabled={skinsEnabled}
+              onStartingHoleChange={setStartingHole}
+              onLastPlaceWolfChange={setLastPlaceWolf}
+              onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
+              onPayoutStructureChange={setPayoutStructure}
+              onSkinsCarryoverChange={setSkinsCarryover}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <button
+              onClick={() => setStep(1)}
+              className="flex-1 py-3 px-4 rounded-xl border-2 border-wolf-border bg-wolf-card
+                text-wolf-text font-semibold cursor-pointer transition-colors duration-150
+                hover:bg-wolf-hover"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleStart}
+              className="flex-1 py-3 px-4 rounded-xl border-2 border-wolf-accent bg-wolf-accent
+                text-wolf-bg font-semibold cursor-pointer transition-colors duration-150
+                hover:bg-wolf-accent-hover"
+            >
+              Start Round
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
