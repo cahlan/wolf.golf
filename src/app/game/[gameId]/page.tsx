@@ -320,17 +320,35 @@ function GameView({
     );
     if (isSix) {
       setSixGrossScores(gs);
+      setHoleInput({
+        holeNum,
+        wolf: existingHole.wolf,
+        partner: existingHole.partner,
+        loneWolf: existingHole.loneWolf,
+        grossScores: gs,
+        phase: 'scores',
+      });
     } else if (isThreeTwoOne) {
       setThreeTwoOneGrossScores(gs);
+      setHoleInput({
+        holeNum,
+        wolf: existingHole.wolf,
+        partner: existingHole.partner,
+        loneWolf: existingHole.loneWolf,
+        grossScores: gs,
+        phase: 'scores',
+      });
+    } else {
+      // Wolf game: start at wolf-decision so partner/lone-wolf (and wolf for last-place holes) can be changed
+      setHoleInput({
+        holeNum,
+        wolf: existingHole.wolf,
+        partner: existingHole.partner,
+        loneWolf: existingHole.loneWolf,
+        grossScores: gs,
+        phase: 'wolf-decision',
+      });
     }
-    setHoleInput({
-      holeNum,
-      wolf: existingHole.wolf,
-      partner: existingHole.partner,
-      loneWolf: existingHole.loneWolf,
-      grossScores: gs,
-      phase: 'scores',
-    });
   }, [game.holes, isSix, isThreeTwoOne]);
 
   function submitHole() {
@@ -896,6 +914,14 @@ function GameView({
                   onWolfDecision={handleWolfDecision}
                   strokesThisHole={editingHoleNum ? getAllStrokesForHole(game, editingHoleNum) : strokesThisHole}
                   holeInfo={(editingHoleNum ? game.course.holes[editingHoleNum - 1] : holeInfo)!}
+                  wolfEditable={!!editingHoleNum && (() => {
+                    const startH = game.startingHole ?? 1;
+                    const lastPlaceStart = game.lastPlaceWolfStartHole ?? 17;
+                    const lastPlaceOn = game.lastPlaceWolf ?? true;
+                    if (!lastPlaceOn) return false;
+                    const rPos = ((editingHoleNum - startH + 18) % 18) + 1;
+                    return rPos >= lastPlaceStart;
+                  })()}
                 />
               )}
             </>
