@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { Game, HoleInput, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole, calculateHolePoints, getHoleMatchupDetail } from '@/lib/engine';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
@@ -15,12 +15,17 @@ interface HoleInputFlowProps {
   onWolfDecision?: (partner: string | null, loneWolf: 'early' | 'late' | 'default' | null) => void;
   strokesThisHole: Record<string, number>;
   holeInfo: HoleInfo;
+  /** Whether the wolf themselves can be changed (last-place wolf holes when editing) */
+  wolfEditable?: boolean;
 }
 
 export function HoleInputFlow({
   game, holeInput, setHoleInput, onSubmit, onCancel, onWolfDecision, strokesThisHole, holeInfo,
+  wolfEditable = false,
 }: HoleInputFlowProps) {
   const { phase, wolf, holeNum } = holeInput;
+  // When wolfEditable, show a wolf-picker step before the normal wolf-decision phase
+  const [pickingWolf, setPickingWolf] = React.useState(wolfEditable && phase === 'wolf-decision');
 
   const nonWolfPlayers = game.players.filter(p => p !== wolf);
   const rotation = (holeNum - 1) % nonWolfPlayers.length;
@@ -29,6 +34,10 @@ export function HoleInputFlow({
     ...nonWolfPlayers.slice(0, rotation),
   ];
 
+  function selectWolf(newWolf: string) {
+    setHoleInput(prev => prev ? { ...prev, wolf: newWolf, partner: null, loneWolf: null } : prev);
+    setPickingWolf(false);
+  }
   function selectPartner(partner: string) {
     setHoleInput(prev => prev ? { ...prev, partner, loneWolf: null, phase: 'scores' } : prev);
     onWolfDecision?.(partner, null);
@@ -78,8 +87,41 @@ export function HoleInputFlow({
         HOLE {holeNum} · PAR {holeInfo.par} · SI {holeInfo.strokeIndex}
       </div>
 
+      {/* WOLF PICKER (last-place holes edit only) */}
+      {pickingWolf && (
+        <Fade>
+          <div className="text-center mb-5">
+            <div className="text-xl font-bold mb-1">🐺 Who&apos;s the Wolf?</div>
+            <div className="text-sm text-wolf-text-muted">Last place is wolf — confirm or change who has it</div>
+          </div>
+          <Label>SELECT WOLF</Label>
+          {game.players.map(p => (
+            <button
+              key={p}
+              onClick={() => selectWolf(p)}
+              className={`w-full py-3.5 px-4 mb-2 border rounded-[10px] text-wolf-text text-base
+                font-body cursor-pointer text-left flex justify-between items-center
+                ${
+                  p === wolf
+                    ? 'bg-wolf-orange-bg border-wolf-orange/40 font-bold text-wolf-orange'
+                    : 'bg-wolf-card border-wolf-border'
+                }`}
+            >
+              <span>{p}</span>
+              {p === wolf && <span className="text-wolf-orange text-sm">🐺 current</span>}
+            </button>
+          ))}
+          <button
+            onClick={onCancel}
+            className="w-full py-3 bg-transparent border-none text-wolf-text-muted text-sm cursor-pointer mt-1"
+          >
+            Cancel
+          </button>
+        </Fade>
+      )}
+
       {/* WOLF DECISION PHASE */}
-      {phase === 'wolf-decision' && (
+      {!pickingWolf && phase === 'wolf-decision' && (
         <Fade>
           <div className="text-center mb-5">
             <div className="text-xl font-bold mb-1">🐺 {wolf}&apos;s call</div>
@@ -145,7 +187,7 @@ export function HoleInputFlow({
       )}
 
       {/* SCORES PHASE */}
-      {phase === 'scores' && <ScoresPhase
+      {!pickingWolf && phase === 'scores' && <ScoresPhase
         game={game}
         holeInput={holeInput}
         setHoleInput={setHoleInput}
