@@ -259,13 +259,14 @@ function GameView({
         ...game,
         pendingWolfDecision: {
           holeNum: currentHole,
-          wolf: wolfName,
+          // Use the wolf chosen in the input flow (may be overridden on last-place holes)
+          wolf: holeInput?.wolf ?? wolfName,
           partner,
           loneWolf,
         },
       });
     }
-  }, [isScorekeeper, game, currentHole, wolfName, setGame]);
+  }, [isScorekeeper, game, currentHole, wolfName, holeInput, setGame]);
 
   // Players in order of play (tee order): rotate based on who was wolf last hole; wolf always last.
   const orderedPlayers = useMemo(() => {
@@ -914,12 +915,15 @@ function GameView({
                   onWolfDecision={handleWolfDecision}
                   strokesThisHole={editingHoleNum ? getAllStrokesForHole(game, editingHoleNum) : strokesThisHole}
                   holeInfo={(editingHoleNum ? game.course.holes[editingHoleNum - 1] : holeInfo)!}
-                  wolfEditable={!!editingHoleNum && (() => {
+                  wolfEditable={(() => {
+                    // Allow picking the wolf on last-place holes, both for new entry and editing.
+                    const lastPlaceOn = game.lastPlaceWolf ?? true;
+                    if (!lastPlaceOn || !isWolfGame) return false;
                     const startH = game.startingHole ?? 1;
                     const lastPlaceStart = game.lastPlaceWolfStartHole ?? 17;
-                    const lastPlaceOn = game.lastPlaceWolf ?? true;
-                    if (!lastPlaceOn) return false;
-                    const rPos = ((editingHoleNum - startH + 18) % 18) + 1;
+                    const rPos = editingHoleNum
+                      ? ((editingHoleNum - startH + 18) % 18) + 1
+                      : roundPos;
                     return rPos >= lastPlaceStart;
                   })()}
                 />

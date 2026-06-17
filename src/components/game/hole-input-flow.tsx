@@ -92,7 +92,7 @@ export function HoleInputFlow({
         <Fade>
           <div className="text-center mb-5">
             <div className="text-xl font-bold mb-1">🐺 Who&apos;s the Wolf?</div>
-            <div className="text-sm text-wolf-text-muted">Last-place wolf — select the correct player</div>
+            <div className="text-sm text-wolf-text-muted">Last place is wolf — confirm or change who has it</div>
           </div>
           <Label>SELECT WOLF</Label>
           {game.players.map(p => (
