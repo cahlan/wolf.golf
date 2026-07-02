@@ -12,6 +12,12 @@ test.describe('Settlement screen', () => {
       await expect(scoreBtn).toBeVisible();
       await scoreBtn.click();
 
+      // Holes 17-18 are last-place-wolf holes: a wolf picker appears first —
+      // confirm the current last-place wolf before the partner step.
+      if (hole >= 17) {
+        await page.getByRole('button', { name: /current/ }).click();
+      }
+
       // Wolf decision: pick first partner
       const partnerButtons = page.locator('button:has-text("2v2")');
       await partnerButtons.first().click();
@@ -32,6 +38,10 @@ test.describe('Settlement screen', () => {
     // Score the remaining 3 holes
     for (let hole = 16; hole <= 18; hole++) {
       await page.getByRole('button', { name: new RegExp(`Score Hole ${hole}`) }).click();
+      // Last-place-wolf holes (17-18) show a wolf picker first.
+      if (hole >= 17) {
+        await page.getByRole('button', { name: /current/ }).click();
+      }
       await page.locator('button:has-text("2v2")').first().click();
       await page.getByRole('button', { name: /Confirm/i }).click();
     }
@@ -71,6 +81,10 @@ test.describe('Settlement screen', () => {
 
     for (let hole = 16; hole <= 18; hole++) {
       await page.getByRole('button', { name: new RegExp(`Score Hole ${hole}`) }).click();
+      // Last-place-wolf holes (17-18) show a wolf picker first.
+      if (hole >= 17) {
+        await page.getByRole('button', { name: /current/ }).click();
+      }
       await page.locator('button:has-text("2v2")').first().click();
       await page.getByRole('button', { name: /Confirm/i }).click();
     }
