@@ -3,7 +3,7 @@
 import type { Game, CompletedHole } from '@/lib/types/game';
 import { getPlayerStrokesOnHole } from '@/lib/engine';
 import { calculateThreeTwoOneHolePoints, getThreeTwoOneMatchupDetail } from '@/lib/engine/three-two-one';
-import { Label } from '@/components/ui';
+import { Label, StrokeDots } from '@/components/ui';
 
 export function ThreeTwoOneHoleResultDetail({ game, hole }: { game: Game; hole: CompletedHole }) {
   const pts = calculateThreeTwoOneHolePoints(hole);
@@ -35,13 +35,7 @@ export function ThreeTwoOneHoleResultDetail({ game, hole }: { game: Game; hole: 
             >
               <div className="flex items-center gap-1.5">
                 <span className="text-base text-wolf-text">{p}</span>
-                {strokes > 0 && (
-                  <span className="inline-flex gap-0.5 ml-0.5">
-                    {Array.from({ length: strokes }, (_, j) => (
-                      <span key={j} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-                    ))}
-                  </span>
-                )}
+                <StrokeDots count={strokes} className="ml-0.5" />
               </div>
               <div className="flex items-center gap-3 font-mono">
                 <span className="text-[13px] text-wolf-text-muted">{gross}</span>

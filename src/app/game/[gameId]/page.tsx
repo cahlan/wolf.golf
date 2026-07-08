@@ -17,7 +17,7 @@ import {
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
 import { getSegmentForHole } from '@/lib/engine/six';
-import { Button, Label, BottomSheet } from '@/components/ui';
+import { Button, Label, BottomSheet, StrokeDots } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { SixHoleInput } from '@/components/game/six-hole-input';
 import { ThreeTwoOneHoleInput } from '@/components/game/three-two-one-hole-input';
@@ -30,11 +30,10 @@ import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 import { ScorecardSheet } from '@/components/game/scorecard-sheet';
 
 export default function GamePage() {
-  const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const gameId = params.gameId as string;
-  const { game: contextGame, setGame, isScorekeeper, isSpectator, spectateGame, leaveSpectator, completeRound, abandonGame, resumeGame, setIsScorekeeper } = useGame();
+  const { game: contextGame, setGame, isScorekeeper, spectateGame, leaveSpectator, completeRound, abandonGame, resumeGame, setIsScorekeeper } = useGame();
 
   // Local game state for spectators — separate from context to avoid the isSpectator/join dance
   const [localGame, setLocalGame] = useState<Game | null>(null);
@@ -739,13 +738,7 @@ function GameView({
                                     ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
                                     {p}
                                     {isWolf && <span className="text-[13px]">🐺</span>}
-                                    {strokes > 0 && (
-                                      <span className="inline-flex gap-0.5 ml-0.5">
-                                        {Array.from({ length: strokes }, (_, i) => (
-                                          <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-                                        ))}
-                                      </span>
-                                    )}
+                                    <StrokeDots count={strokes} className="ml-0.5" />
                                   </div>
                                 </div>
                               </div>
@@ -773,13 +766,7 @@ function GameView({
                                 <div className="flex-1 min-w-0">
                                   <div className="text-base flex items-center gap-1 text-wolf-text">
                                     {p}
-                                    {strokes > 0 && (
-                                      <span className="inline-flex gap-0.5 ml-0.5">
-                                        {Array.from({ length: strokes }, (_, i) => (
-                                          <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-                                        ))}
-                                      </span>
-                                    )}
+                                    <StrokeDots count={strokes} className="ml-0.5" />
                                   </div>
                                 </div>
                               </div>

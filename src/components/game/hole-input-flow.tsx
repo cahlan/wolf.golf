@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import type { Game, HoleInput, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole, calculateHolePoints, getHoleMatchupDetail } from '@/lib/engine';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
-import { Button, Fade, Label } from '@/components/ui';
+import { Button, Fade, Label, StrokeDots } from '@/components/ui';
 
 interface HoleInputFlowProps {
   game: Game;
@@ -141,13 +141,7 @@ export function HoleInputFlow({
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs text-wolf-text-muted w-5">{idx + 1}.</span>
                   <span className="font-medium">{p}</span>
-                  {s > 0 && (
-                    <span className="inline-flex gap-0.5 items-center">
-                      {Array.from({ length: s }, (_, i) => (
-                        <span key={i} className="w-[7px] h-[7px] rounded-full bg-wolf-accent inline-block" />
-                      ))}
-                    </span>
-                  )}
+                  <StrokeDots count={s} size="md" className="items-center" />
                 </div>
                 <span className="text-wolf-text-muted text-[13px]">2v2 &rarr;</span>
               </button>
@@ -199,7 +193,6 @@ export function HoleInputFlow({
         matchupDetail={matchupDetail}
         onSubmit={onSubmit}
         onWolfDecision={onWolfDecision}
-        holeNum={holeNum}
         wolf={wolf}
       />}
     </Fade>
@@ -208,7 +201,7 @@ export function HoleInputFlow({
 
 function ScoresPhase({
   game, holeInput, setHoleInput, holeInfo, strokesThisHole,
-  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, onWolfDecision, holeNum, wolf,
+  getEffectiveGross, updateScore, previewPoints, matchupDetail, onSubmit, onWolfDecision, wolf,
 }: {
   game: Game;
   holeInput: HoleInput;
@@ -221,7 +214,6 @@ function ScoresPhase({
   matchupDetail: ReturnType<typeof getHoleMatchupDetail>;
   onSubmit: () => void;
   onWolfDecision?: (partner: string | null, loneWolf: 'early' | 'late' | 'default' | null) => void;
-  holeNum: number;
   wolf: string;
 }) {
   const isLone = !!holeInput.loneWolf;
@@ -241,13 +233,7 @@ function ScoresPhase({
             ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
             {p}
             {isWolf && <span className="text-[13px]">🐺</span>}
-            {strokes > 0 && (
-              <span className="inline-flex gap-0.5 ml-0.5">
-                {Array.from({ length: strokes }, (_, i) => (
-                  <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-                ))}
-              </span>
-            )}
+            <StrokeDots count={strokes} className="ml-0.5" />
           </div>
         </div>
         <Button

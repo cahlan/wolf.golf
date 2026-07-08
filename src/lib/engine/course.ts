@@ -17,10 +17,3 @@ export function createCourse(name: string, holes: HoleInfo[]): Course {
 export function courseHoleForRoundPos(startingHole: number, roundPos: number): number {
   return ((startingHole - 1 + roundPos - 1) % 18) + 1;
 }
-
-/**
- * How many holes remain in the round, given how many have been played.
- */
-export function holesRemainingInRound(totalPlayed: number): number {
-  return 18 - totalPlayed;
-}

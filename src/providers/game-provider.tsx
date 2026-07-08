@@ -80,7 +80,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
 
         const games = (data ?? [])
-          .map((row: any) => row.state as Game)
+          .map((row: { state: Game }) => row.state)
           .filter(Boolean);
 
         // Preserve weekend order (Supabase IN doesn't guarantee order)

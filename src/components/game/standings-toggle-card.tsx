@@ -1,13 +1,43 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Game, Standing, SkinsData } from '@/lib/types/game';
+import { useState } from 'react';
+import type { CompletedHole, Game, Standing, SkinsData } from '@/lib/types/game';
 import { Label } from '@/components/ui';
 
 interface StandingsToggleCardProps {
   game: Game;
   standings: Standing[];
   skinsData: SkinsData;
+}
+
+// Find the last hole with an outright skin winner (exactly one lowest net score),
+// counting how many skins that win captured after any carryover.
+function findLastSkinWin(holes: CompletedHole[]): { player: string; holeNum: number; count: number } | null {
+  for (let i = holes.length - 1; i >= 0; i--) {
+    const hole = holes[i];
+    const entries = Object.entries(hole.netScores);
+    if (entries.length === 0) continue;
+    const minScore = Math.min(...entries.map(([, s]) => s));
+    const winners = entries.filter(([, s]) => s === minScore);
+    if (winners.length === 1) {
+      let carry = 0;
+      let skinsWon = 0;
+      for (let j = 0; j <= i; j++) {
+        const ent = Object.entries(holes[j].netScores);
+        if (ent.length === 0) continue;
+        const min = Math.min(...ent.map(([, s]) => s));
+        const w = ent.filter(([, s]) => s === min);
+        if (w.length === 1) {
+          skinsWon = 1 + carry;
+          carry = 0;
+        } else {
+          carry += 1;
+        }
+      }
+      return { player: winners[0][0], holeNum: hole.holeNum, count: skinsWon };
+    }
+  }
+  return null;
 }
 
 export function StandingsToggleCard({ game, standings, skinsData }: StandingsToggleCardProps) {
@@ -17,35 +47,7 @@ export function StandingsToggleCard({ game, standings, skinsData }: StandingsTog
   const [tab, setTab] = useState<'wolf' | 'skins'>('wolf');
   const skinsEnabled = game.skinsEnabled !== false;
 
-  // Find the last hole where exactly one player had the lowest net score (outright skin winner)
-  const lastSkinWin = useMemo(() => {
-    for (let i = game.holes.length - 1; i >= 0; i--) {
-      const hole = game.holes[i];
-      const entries = Object.entries(hole.netScores);
-      if (entries.length === 0) continue;
-      const minScore = Math.min(...entries.map(([, s]) => s));
-      const winners = entries.filter(([, s]) => s === minScore);
-      if (winners.length === 1) {
-        let carry = 0;
-        let skinsWon = 0;
-        for (let j = 0; j <= i; j++) {
-          const h = game.holes[j];
-          const ent = Object.entries(h.netScores);
-          if (ent.length === 0) continue;
-          const min = Math.min(...ent.map(([, s]) => s));
-          const w = ent.filter(([, s]) => s === min);
-          if (w.length === 1) {
-            skinsWon = 1 + carry;
-            carry = 0;
-          } else {
-            carry += 1;
-          }
-        }
-        return { player: winners[0][0], holeNum: hole.holeNum, count: skinsWon };
-      }
-    }
-    return null;
-  }, [game.holes]);
+  const lastSkinWin = findLastSkinWin(game.holes);
 
   return (
     <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">

@@ -308,11 +308,9 @@ describe('6x6x6 Engine', () => {
       expect(typeof s.points).toBe('number');
       expect(Number.isNaN(s.points)).toBe(false);
     });
-    // Verify transfers sum to zero
-    let totalTransferred = 0;
+    // Every transfer must move a positive amount
     settlement.transfers.forEach(t => {
       expect(t.amount).toBeGreaterThan(0);
-      totalTransferred += t.amount;
     });
     // Net should sum to 0 across all players
     const netSum = Object.values(settlement.totalNet).reduce((a, b) => a + b, 0);
