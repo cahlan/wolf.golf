@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
-import { createGame, createCourse } from '@/lib/engine';
+import {
+  createGame,
+  createCourse,
+  HOLES_PER_ROUND,
+  DEFAULT_STARTING_HOLE,
+  DEFAULT_LAST_PLACE_WOLF_START_HOLE,
+} from '@/lib/engine';
 import { loadSavedCourses, saveCourse, getSuggestedHandicap, getSuggestedPlayers, savePlayerCache } from '@/lib/storage/local';
 import { fetchCoursesFromSupabase, upsertCourseToSupabase } from '@/lib/supabase/courses';
 import { BackButton } from '@/components/ui';
@@ -33,9 +39,9 @@ export default function CreateGamePage() {
   const [suggestions] = useState(() => getSuggestedPlayers());
 
   // Advanced config state
-  const [startingHole, setStartingHole] = useState(1);
+  const [startingHole, setStartingHole] = useState(DEFAULT_STARTING_HOLE);
   const [lastPlaceWolf, setLastPlaceWolf] = useState(true);
-  const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(17);
+  const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(DEFAULT_LAST_PLACE_WOLF_START_HOLE);
   const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('winner-takes-all');
   const [skinsCarryover, setSkinsCarryover] = useState(true);
 
@@ -56,20 +62,20 @@ export default function CreateGamePage() {
   }, []);
   const [courseName, setCourseName] = useState('');
   const [courseHoles, setCourseHoles] = useState<HoleInfo[]>(
-    Array.from({ length: 18 }, () => ({ par: 4 as const, strokeIndex: 0 }))
+    Array.from({ length: HOLES_PER_ROUND }, () => ({ par: 4 as const, strokeIndex: 0 }))
   );
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select');
 
   const activePlayers = players.slice(0, playerCount);
   const allPlayersFilled = activePlayers.every(p => p.trim().length > 0);
   const courseValid = !!selectedCourse || (
-    courseName.trim() !== '' && courseHoles.every(h => h.strokeIndex >= 1 && h.strokeIndex <= 18)
+    courseName.trim() !== '' && courseHoles.every(h => h.strokeIndex >= 1 && h.strokeIndex <= HOLES_PER_ROUND)
   );
 
   const strokeIndexes = courseHoles.map(h => h.strokeIndex);
   const strokeIndexesValid = courseMode === 'select' || (
-    new Set(strokeIndexes).size === 18 &&
-    strokeIndexes.every(si => si >= 1 && si <= 18)
+    new Set(strokeIndexes).size === HOLES_PER_ROUND &&
+    strokeIndexes.every(si => si >= 1 && si <= HOLES_PER_ROUND)
   );
 
   function handlePlayerNameChange(index: number, name: string) {

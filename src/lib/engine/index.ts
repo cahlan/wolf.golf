@@ -1,4 +1,12 @@
-export { LONE_WOLF_POINTS, WEEKEND_PLACEMENT_POINTS } from './constants';
+export {
+  LONE_WOLF_POINTS,
+  WEEKEND_PLACEMENT_POINTS,
+  HOLES_PER_ROUND,
+  HOLES_PER_SEGMENT,
+  PLAYERS_PER_GAME,
+  DEFAULT_STARTING_HOLE,
+  DEFAULT_LAST_PLACE_WOLF_START_HOLE,
+} from './constants';
 export { generateCode, createGame } from './game';
 export { createCourse, courseHoleForRoundPos } from './course';
 export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';

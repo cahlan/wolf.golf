@@ -1,6 +1,7 @@
 'use client';
 
 import type { Game } from '@/lib/types/game';
+import { HOLES_PER_ROUND } from '@/lib/engine';
 import { BottomSheet, Label } from '@/components/ui';
 
 function sum(vals: number[]) {
@@ -8,7 +9,7 @@ function sum(vals: number[]) {
 }
 
 export function ScorecardSheet({ game, open, onClose }: { game: Game; open: boolean; onClose: () => void }) {
-  const holes = Array.from({ length: 18 }, (_, i) => i + 1);
+  const holes = Array.from({ length: HOLES_PER_ROUND }, (_, i) => i + 1);
 
   const holeByNum = new Map(game.holes.map(h => [h.holeNum, h] as const));
 

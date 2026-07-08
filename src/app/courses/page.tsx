@@ -5,16 +5,17 @@ import type { Course, HoleInfo } from '@/lib/types/game';
 import { loadSavedCourses, saveCourse, deleteCourse } from '@/lib/storage/local';
 import { fetchCoursesFromSupabase, upsertCourseToSupabase, deleteCourseFromSupabase } from '@/lib/supabase/courses';
 import { createCourse } from '@/lib/engine/course';
+import { HOLES_PER_ROUND } from '@/lib/engine';
 import { BackButton, Button, Fade, Label, Title, Sub } from '@/components/ui';
 import { CourseEditor } from '@/components/course/course-editor';
 
-const EMPTY_HOLES: HoleInfo[] = Array.from({ length: 18 }, () => ({ par: 4 as const, strokeIndex: 0 }));
+const EMPTY_HOLES: HoleInfo[] = Array.from({ length: HOLES_PER_ROUND }, () => ({ par: 4 as const, strokeIndex: 0 }));
 
 function validateStrokeIndexes(holes: HoleInfo[]): boolean {
   const indexes = holes.map(h => h.strokeIndex);
   return (
-    new Set(indexes).size === 18 &&
-    indexes.every(si => si >= 1 && si <= 18)
+    new Set(indexes).size === HOLES_PER_ROUND &&
+    indexes.every(si => si >= 1 && si <= HOLES_PER_ROUND)
   );
 }
 

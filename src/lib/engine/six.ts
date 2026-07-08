@@ -1,11 +1,12 @@
 import type { Game, CompletedHole, SixHoleMatchupDetail } from '../types/game';
+import { HOLES_PER_SEGMENT } from './constants';
 
 /**
  * Returns the segment index (0, 1, or 2) for a given hole number.
  * Holes 1-6 → segment 0, 7-12 → segment 1, 13-18 → segment 2.
  */
 export function getSegmentForHole(holeNum: number): number {
-  return Math.floor((holeNum - 1) / 6);
+  return Math.floor((holeNum - 1) / HOLES_PER_SEGMENT);
 }
 
 /**

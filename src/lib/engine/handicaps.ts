@@ -1,10 +1,11 @@
 import type { Game } from '../types/game';
+import { HOLES_PER_ROUND } from './constants';
 
 export function getPlayerStrokesOnHole(game: Game, playerName: string, holeNum: number): number {
   const holeInfo = game.course.holes[holeNum - 1];
   const strokeIndex = holeInfo.strokeIndex;
 
-  if (!strokeIndex || strokeIndex < 1 || strokeIndex > 18) return 0;
+  if (!strokeIndex || strokeIndex < 1 || strokeIndex > HOLES_PER_ROUND) return 0;
 
   const minHC = Math.min(...Object.values(game.handicaps));
   const playerHC = game.handicaps[playerName];
@@ -14,7 +15,7 @@ export function getPlayerStrokesOnHole(game: Game, playerName: string, holeNum: 
 
   let strokes = 0;
   if (strokeIndex <= diff) strokes++;
-  if (diff > 18 && strokeIndex <= (diff - 18)) strokes++;
+  if (diff > HOLES_PER_ROUND && strokeIndex <= (diff - HOLES_PER_ROUND)) strokes++;
 
   return strokes;
 }
