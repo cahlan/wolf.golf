@@ -3,7 +3,7 @@
 import type { Game, CompletedHole } from '@/lib/types/game';
 import { calculateHolePoints, getHoleMatchupDetail, getPlayerStrokesOnHole } from '@/lib/engine';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
-import { Label, StrokeDots } from '@/components/ui';
+import { Label, StrokeDots, VsDivider, HolePointsTotals } from '@/components/ui';
 
 export function HoleResultDetail({ game, hole }: { game: Game; hole: CompletedHole }) {
   const pts = calculateHolePoints(hole);
@@ -88,13 +88,7 @@ export function HoleResultDetail({ game, hole }: { game: Game; hole: CompletedHo
         {wolfTeam.map((p, i) => renderPlayerRow(p, i))}
       </div>
 
-      {/* VS divider */}
-      <div className="text-center py-1 mb-3 relative">
-        <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
-        <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
-          VS
-        </span>
-      </div>
+      <VsDivider />
 
       {/* Opponent team */}
       <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
@@ -135,20 +129,7 @@ export function HoleResultDetail({ game, hole }: { game: Game; hole: CompletedHo
           {detail.summary}
         </div>
 
-        <div className="flex justify-around mt-2.5">
-          {game.players.map(p => {
-            const points = pts[p];
-            return (
-              <div key={p} className="text-center">
-                <div className="text-[11px] text-wolf-text-muted">{p.slice(0, 5)}</div>
-                <div className={`font-mono font-extrabold text-lg
-                  ${points > 0 ? 'text-wolf-accent' : 'text-wolf-text-muted'}`}>
-                  {points > 0 ? `+${points}` : '—'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <HolePointsTotals players={game.players} points={pts} />
       </div>
     </div>
   );

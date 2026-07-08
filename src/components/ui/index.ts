@@ -7,3 +7,5 @@ export { Fade } from './fade';
 export { Input } from './input';
 export { BottomSheet } from './bottom-sheet';
 export { StrokeDots } from './stroke-dots';
+export { VsDivider } from './vs-divider';
+export { HolePointsTotals } from './hole-points-totals';

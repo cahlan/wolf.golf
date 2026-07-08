@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import type { Game, HoleInput, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole, calculateHolePoints, getHoleMatchupDetail } from '@/lib/engine';
 import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
-import { Button, Fade, Label, StrokeDots } from '@/components/ui';
+import { Button, Fade, Label, StrokeDots, VsDivider, HolePointsTotals } from '@/components/ui';
 
 interface HoleInputFlowProps {
   game: Game;
@@ -287,13 +287,7 @@ function ScoresPhase({
         {wolfTeam.map(renderPlayerRow)}
       </div>
 
-      {/* VS divider */}
-      <div className="text-center py-1 mb-3 relative">
-        <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
-        <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
-          VS
-        </span>
-      </div>
+      <VsDivider />
 
       {/* Opponent team */}
       <div className="bg-wolf-card rounded-xl border border-wolf-border pt-2.5 px-3.5 pb-1.5 mb-3">
@@ -328,20 +322,7 @@ function ScoresPhase({
           {matchupDetail.summary}
         </div>
 
-        <div className="flex justify-around mt-2.5">
-          {game.players.map(p => {
-            const pts = previewPoints[p];
-            return (
-              <div key={p} className="text-center">
-                <div className="text-[11px] text-wolf-text-muted">{p.slice(0, 5)}</div>
-                <div className={`font-mono font-extrabold text-lg
-                  ${pts > 0 ? 'text-wolf-accent' : 'text-wolf-text-muted'}`}>
-                  {pts > 0 ? `+${pts}` : '—'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <HolePointsTotals players={game.players} points={previewPoints} />
       </div>
 
       <div className="flex gap-2.5 mt-5">
