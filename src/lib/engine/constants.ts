@@ -1,5 +1,20 @@
 import type { LoneWolfType } from '../types/game';
 
+/** A standard round is 18 holes. Used for round-position wrap-around and completion. */
+export const HOLES_PER_ROUND = 18;
+
+/** 6x6x6 splits the round into three equal segments of this many holes. */
+export const HOLES_PER_SEGMENT = 6;
+
+/** All game types assume a foursome. Drives wolf rotation and team assignment. */
+export const PLAYERS_PER_GAME = 4;
+
+/** Default first hole played when a game doesn't specify a wrap-around start. */
+export const DEFAULT_STARTING_HOLE = 1;
+
+/** Round position at which the trailing player becomes wolf, unless overridden. */
+export const DEFAULT_LAST_PLACE_WOLF_START_HOLE = 17;
+
 /**
  * Points awarded to the wolf for a winning lone-wolf hole.
  * - early: declared before anyone tees off (+4)

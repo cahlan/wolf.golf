@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { GameType } from '@/lib/types/game';
+import { HOLES_PER_ROUND, courseHoleForRoundPos } from '@/lib/engine';
 import { Button, Label } from '@/components/ui';
 
 interface AdvancedConfigProps {
@@ -83,8 +84,8 @@ export function AdvancedConfig({
                 <span className="text-wolf-text text-[15px] font-body block">Starting hole</span>
                 <span className="text-wolf-text-muted text-[12px] font-body">
                   {(() => {
-                    const lastHole = ((startingHole + 16) % 18) + 1;
-                    return `Playing 18 holes (${startingHole} → ${lastHole})`;
+                    const lastHole = courseHoleForRoundPos(startingHole, HOLES_PER_ROUND);
+                    return `Playing ${HOLES_PER_ROUND} holes (${startingHole} → ${lastHole})`;
                   })()}
                 </span>
               </div>
@@ -103,8 +104,8 @@ export function AdvancedConfig({
                   </span>
                   <Button
                     variant="score"
-                    disabled={startingHole >= 18}
-                    onClick={() => onStartingHoleChange(Math.min(18, startingHole + 1))}
+                    disabled={startingHole >= HOLES_PER_ROUND}
+                    onClick={() => onStartingHoleChange(Math.min(HOLES_PER_ROUND, startingHole + 1))}
                   >
                     +
                   </Button>
@@ -148,8 +149,8 @@ export function AdvancedConfig({
                     </span>
                     <Button
                       variant="score"
-                      disabled={lastPlaceWolfStartHole >= 18}
-                      onClick={() => onLastPlaceWolfStartHoleChange(Math.min(18, lastPlaceWolfStartHole + 1))}
+                      disabled={lastPlaceWolfStartHole >= HOLES_PER_ROUND}
+                      onClick={() => onLastPlaceWolfStartHoleChange(Math.min(HOLES_PER_ROUND, lastPlaceWolfStartHole + 1))}
                     >
                       +
                     </Button>

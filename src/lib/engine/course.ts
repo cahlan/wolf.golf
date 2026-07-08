@@ -1,4 +1,5 @@
 import type { Course, HoleInfo } from '../types/game';
+import { HOLES_PER_ROUND } from './constants';
 
 export function createCourse(name: string, holes: HoleInfo[]): Course {
   return { name, holes };
@@ -15,5 +16,5 @@ export function createCourse(name: string, holes: HoleInfo[]): Course {
  *   roundPos=18 → 13
  */
 export function courseHoleForRoundPos(startingHole: number, roundPos: number): number {
-  return ((startingHole - 1 + roundPos - 1) % 18) + 1;
+  return ((startingHole - 1 + roundPos - 1) % HOLES_PER_ROUND) + 1;
 }

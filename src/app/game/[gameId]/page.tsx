@@ -15,7 +15,12 @@ import {
   courseHoleForRoundPos,
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
-import { LONE_WOLF_POINTS } from '@/lib/engine/constants';
+import {
+  LONE_WOLF_POINTS,
+  HOLES_PER_ROUND,
+  DEFAULT_STARTING_HOLE,
+  DEFAULT_LAST_PLACE_WOLF_START_HOLE,
+} from '@/lib/engine/constants';
 import { getSegmentForHole } from '@/lib/engine/six';
 import { Button, Label, BottomSheet, StrokeDots } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
@@ -187,12 +192,12 @@ function GameView({
   watcherCount: number;
 }) {
   const router = useRouter();
-  const startHole = game.startingHole ?? 1;
+  const startHole = game.startingHole ?? DEFAULT_STARTING_HOLE;
   // roundPos: 1-based position in the round (1 = first hole played, 18 = last)
   // courseHole: the actual course hole number (1-18), wrapping after 18
   const [roundPos, setRoundPos] = useState(() => game.holes.length + 1);
   const currentHole = courseHoleForRoundPos(startHole, roundPos);
-  const roundComplete = game.holes.length >= 18;
+  const roundComplete = game.holes.length >= HOLES_PER_ROUND;
   const [tab, setTab] = useState<'play' | 'standings' | 'skins'>('play');
   const [copied, setCopied] = useState(false);
   const [showScorecard, setShowScorecard] = useState(false);
@@ -401,14 +406,14 @@ function GameView({
     }
 
     const updatedGame = { ...game, holes: updatedHoles, pendingWolfDecision: null };
-    if (!editingHoleNum && updatedHoles.length >= 18) updatedGame.status = 'complete';
+    if (!editingHoleNum && updatedHoles.length >= HOLES_PER_ROUND) updatedGame.status = 'complete';
 
     setGame(updatedGame);
     setHoleInput(null);
     setEditingHoleNum(null);
 
     if (!editingHoleNum) {
-      if (updatedHoles.length >= 18) {
+      if (updatedHoles.length >= HOLES_PER_ROUND) {
         handleComplete(updatedGame);
       } else {
         setRoundPos(p => p + 1);
@@ -786,7 +791,7 @@ function GameView({
                         rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
                         <span className="text-lg">🐺</span>
                         <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
-                        {roundPos >= (game.lastPlaceWolfStartHole ?? 17) && (
+                        {roundPos >= (game.lastPlaceWolfStartHole ?? DEFAULT_LAST_PLACE_WOLF_START_HOLE) && (
                           <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
                             LAST PLACE
                           </span>
@@ -906,10 +911,10 @@ function GameView({
                     // Allow picking the wolf on last-place holes, both for new entry and editing.
                     const lastPlaceOn = game.lastPlaceWolf ?? true;
                     if (!lastPlaceOn || !isWolfGame) return false;
-                    const startH = game.startingHole ?? 1;
-                    const lastPlaceStart = game.lastPlaceWolfStartHole ?? 17;
+                    const startH = game.startingHole ?? DEFAULT_STARTING_HOLE;
+                    const lastPlaceStart = game.lastPlaceWolfStartHole ?? DEFAULT_LAST_PLACE_WOLF_START_HOLE;
                     const rPos = editingHoleNum
-                      ? ((editingHoleNum - startH + 18) % 18) + 1
+                      ? ((editingHoleNum - startH + HOLES_PER_ROUND) % HOLES_PER_ROUND) + 1
                       : roundPos;
                     return rPos >= lastPlaceStart;
                   })()}
