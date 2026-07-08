@@ -14,6 +14,7 @@ import {
 } from '@/lib/storage/local';
 import { getLatestWeekendId, getWeekendRounds, appendWeekendRound, removeWeekendRound, resetWeekend as resetWeekendRemote } from '@/lib/supabase/weekends';
 import { supabase } from '@/lib/supabase/client';
+import { upsertGameState } from '@/lib/supabase/games';
 
 interface GameContextValue {
   game: Game | null;
@@ -101,12 +102,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (game) {
       saveActiveGame(game);
       setHasActiveGame(true);
-      supabase
-        .from('games')
-        .upsert({ id: game.id, state: game, updated_at: new Date().toISOString() })
-        .then(({ error }) => {
-          if (error) console.error('[game-provider] Failed to sync game to Supabase:', error.message);
-        });
+      upsertGameState(game);
     }
   }, [game, hydrated, isScorekeeper]);
 

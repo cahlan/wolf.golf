@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { supabase } from '@/lib/supabase/client';
+import { fetchGameState } from '@/lib/supabase/games';
 import {
   calculateStandings,
   calculateSkins,
@@ -71,19 +72,14 @@ export default function GamePage() {
     if (isScorekeeper || hasFetched.current) return;
     hasFetched.current = true;
     setLoading(true);
-    supabase
-      .from('games')
-      .select('state')
-      .eq('id', gameId)
-      .single()
-      .then(({ data }) => {
-        if (data?.state) {
-          setLocalGame(data.state as Game);
-          // Also update context for backwards compat (join page, home screen, etc.)
-          spectateGame(data.state as Game);
-        }
-        setLoading(false);
-      });
+    fetchGameState(gameId).then(state => {
+      if (state) {
+        setLocalGame(state);
+        // Also update context for backwards compat (join page, home screen, etc.)
+        spectateGame(state);
+      }
+      setLoading(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, isScorekeeper]);
 

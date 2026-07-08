@@ -3,10 +3,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
-import { supabase } from '@/lib/supabase/client';
+import { fetchGameState } from '@/lib/supabase/games';
 import { calculateSettlement } from '@/lib/engine';
 import { BackButton, Button, Fade, Label } from '@/components/ui';
-import type { Game } from '@/lib/types/game';
 
 export default function SettlementPage() {
   const router = useRouter();
@@ -21,20 +20,12 @@ export default function SettlementPage() {
   useEffect(() => {
     if (game) return;
     let cancelled = false;
-    supabase
-      .from('games')
-      .select('state')
-      .eq('id', gameId)
-      .single()
-      .then(({ data }) => {
-        if (cancelled) return;
-        if (data?.state) {
-          spectateGame(data.state as Game);
-        } else {
-          router.push('/');
-        }
-        setFetchingRemote(false);
-      });
+    fetchGameState(gameId).then(state => {
+      if (cancelled) return;
+      if (state) spectateGame(state);
+      else router.push('/');
+      setFetchingRemote(false);
+    });
     return () => { cancelled = true; };
   }, [gameId, game, router, spectateGame]);
 
