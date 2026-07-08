@@ -17,13 +17,11 @@ import {
 } from '@/lib/engine';
 import type { Game, HoleInput, LoneWolfType } from '@/lib/types/game';
 import {
-  LONE_WOLF_POINTS,
   HOLES_PER_ROUND,
   DEFAULT_STARTING_HOLE,
   DEFAULT_LAST_PLACE_WOLF_START_HOLE,
 } from '@/lib/engine/constants';
-import { getSegmentForHole } from '@/lib/engine/six';
-import { Button, Label, BottomSheet, StrokeDots, VsDivider } from '@/components/ui';
+import { Button, BottomSheet } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { SixHoleInput } from '@/components/game/six-hole-input';
 import { ThreeTwoOneHoleInput } from '@/components/game/three-two-one-hole-input';
@@ -34,6 +32,11 @@ import { SixHoleResultDetail } from '@/components/game/six-hole-result';
 import { ThreeTwoOneHoleResultDetail } from '@/components/game/three-two-one-hole-result';
 import { StandingsToggleCard } from '@/components/game/standings-toggle-card';
 import { ScorecardSheet } from '@/components/game/scorecard-sheet';
+import { HoleNavigator } from '@/components/game/hole-navigator';
+import { SixMatchupCard } from '@/components/game/six-matchup-card';
+import { ThreeTwoOnePlayerList } from '@/components/game/three-two-one-player-list';
+import { WolfPendingDecision } from '@/components/game/wolf-pending-decision';
+import { WolfPlayOrder } from '@/components/game/wolf-play-order';
 
 export default function GamePage() {
   const params = useParams();
@@ -536,43 +539,15 @@ function GameView({
                 ? 'animate-[spectatorPulse_300ms_ease-out]'
                 : 'animate-[fadeUp_0.2s_ease-out]'}
             >
-              {/* Hole navigation */}
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  onClick={() => setRoundPos(p => Math.max(1, p - 1))}
-                  disabled={roundPos <= 1}
-                  className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${roundPos <= 1 ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
-                >
-                  &larr; {roundPos > 1 ? courseHoleForRoundPos(startHole, roundPos - 1) : ''}
-                </button>
-
-                <div className="text-center">
-                  <div className="text-xs text-wolf-text-muted font-mono mb-0.5">
-                    {game.holes.some(h => h.holeNum === currentHole) ? 'COMPLETED' : roundComplete ? 'DONE' : 'NEXT UP'}
-                  </div>
-                  <div className="text-[44px] font-extrabold font-display tracking-[-3px]">
-                    {roundComplete && roundPos > game.holes.length ? '✓' : currentHole}
-                  </div>
-                  {holeInfo && (
-                    <div className="inline-flex gap-2.5 text-[13px] font-mono text-wolf-text-sec mt-0.5">
-                      <span>Par {holeInfo.par}</span>
-                      <span className="text-wolf-border">&middot;</span>
-                      <span>SI {holeInfo.strokeIndex}</span>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setRoundPos(p => Math.min(game.holes.length + 1, p + 1))}
-                  disabled={roundPos > game.holes.length}
-                  className={`bg-transparent border border-wolf-border rounded-lg py-2 px-3.5
-                    font-mono text-[13px] ${roundPos > game.holes.length
-                      ? 'text-wolf-text-muted opacity-30 cursor-default' : 'text-wolf-text cursor-pointer'}`}
-                >
-                  {roundPos <= game.holes.length ? courseHoleForRoundPos(startHole, roundPos + 1) : ''} &rarr;
-                </button>
-              </div>
+              <HoleNavigator
+                startHole={startHole}
+                roundPos={roundPos}
+                setRoundPos={setRoundPos}
+                currentHole={currentHole}
+                holeInfo={holeInfo}
+                roundComplete={roundComplete}
+                holes={game.holes}
+              />
 
               {/* Viewing a completed hole — show just the result detail */}
               {game.holes.some(h => h.holeNum === currentHole) ? (
@@ -592,236 +567,45 @@ function GameView({
                 </div>
               ) : isSix ? (
                 <>
-                  {/* 6x6x6: Team matchup card */}
                   {sixTeams && (
-                    <>
-                      <div className="text-center mb-3">
-                        <span className="text-[11px] font-mono text-wolf-accent tracking-[1.5px]">
-                          HOLES {getSegmentForHole(currentHole) * 6 + 1}–{(getSegmentForHole(currentHole) + 1) * 6}
-                        </span>
-                      </div>
-
-                      <div className="bg-wolf-accent-bg rounded-xl border border-wolf-accent/20 p-3.5 mb-3">
-                        <div className="text-xs font-mono text-wolf-accent font-semibold tracking-[1.5px] mb-2">
-                          TEAM A
-                        </div>
-                        {sixTeams.teamA.map(p => {
-                          const strokes = strokesThisHole[p] || 0;
-                          return (
-                            <div key={p} className="flex items-center justify-between py-[5px]">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[15px] text-wolf-text font-medium">{p}</span>
-                                <span className="text-[11px] text-wolf-text-muted font-mono">({game.handicaps[p]} HC)</span>
-                              </div>
-                              {strokes > 0 && (
-                                <div className="flex items-center gap-1">
-                                  {Array.from({ length: strokes }, (_, i) => (
-                                    <div key={i} className="w-2 h-2 rounded-full bg-wolf-accent" />
-                                  ))}
-                                  <span className="font-mono text-xs font-bold text-wolf-accent ml-0.5">
-                                    {strokes > 1 ? `${strokes}` : '1'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <VsDivider />
-
-                      <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
-                        <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-2">
-                          TEAM B
-                        </div>
-                        {sixTeams.teamB.map(p => {
-                          const strokes = strokesThisHole[p] || 0;
-                          return (
-                            <div key={p} className="flex items-center justify-between py-[5px]">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[15px] text-wolf-text font-medium">{p}</span>
-                                <span className="text-[11px] text-wolf-text-muted font-mono">({game.handicaps[p]} HC)</span>
-                              </div>
-                              {strokes > 0 && (
-                                <div className="flex items-center gap-1">
-                                  {Array.from({ length: strokes }, (_, i) => (
-                                    <div key={i} className="w-2 h-2 rounded-full bg-wolf-accent" />
-                                  ))}
-                                  <span className="font-mono text-xs font-bold text-wolf-accent ml-0.5">
-                                    {strokes > 1 ? `${strokes}` : '1'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
+                    <SixMatchupCard
+                      teams={sixTeams}
+                      currentHole={currentHole}
+                      handicaps={game.handicaps}
+                      strokesThisHole={strokesThisHole}
+                    />
                   )}
 
                   <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
                 </>
               ) : isThreeTwoOne ? (
                 <>
-                  {/* 3-2-1: Player info card */}
-                  <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
-                      <Label className="mb-2">PLAYERS</Label>
-                      {game.players.map((p, idx) => {
-                        const strokes = strokesThisHole[p] || 0;
-                        return (
-                          <div
-                            key={p}
-                            className={`flex items-center justify-between py-[7px]
-                              ${idx !== 0 ? 'border-t border-wolf-border' : ''}`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-[15px] text-wolf-text">{p}</span>
-                              <span className="text-[11px] text-wolf-text-muted font-mono">
-                                ({game.handicaps[p]} HC)
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              {strokes > 0 ? (
-                                <>
-                                  {Array.from({ length: strokes }, (_, i) => (
-                                    <div key={i} className="w-2.5 h-2.5 rounded-full bg-wolf-accent" />
-                                  ))}
-                                  <span className="font-mono text-[13px] font-bold text-wolf-accent ml-0.5">
-                                    {strokes > 1 ? `${strokes} strokes` : '1 stroke'}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="font-mono text-xs text-wolf-text-muted">&mdash;</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <ThreeTwoOnePlayerList
+                    players={game.players}
+                    handicaps={game.handicaps}
+                    strokesThisHole={strokesThisHole}
+                  />
 
                   <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
                 </>
               ) : (
                 <>
                   {/* Spectator: pending wolf decision — show ScoresPhase-style team layout */}
-                  {isSpectator && game.pendingWolfDecision?.holeNum === currentHole ? (() => {
-                    const d = game.pendingWolfDecision;
-                    const isLone = !!d.loneWolf;
-                    const wolfTeam = isLone ? [d.wolf] : [d.wolf, d.partner!];
-                    const opponents = game.players.filter(p => !wolfTeam.includes(p));
-
-                    return (
-                      <>
-                        {/* Wolf team */}
-                        <div className="bg-wolf-orange-bg rounded-xl border border-wolf-orange/20 pt-2.5 px-3.5 pb-1.5 mb-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-xs font-mono text-wolf-orange font-semibold tracking-[1.5px] flex items-center gap-1.5">
-                              🐺 {isLone ? 'LONE WOLF' : 'WOLF TEAM'}
-                            </div>
-                            {isLone && (
-                              <span className="text-[11px] font-mono text-wolf-orange bg-wolf-orange/10 py-0.5 px-2 rounded">
-                                +{LONE_WOLF_POINTS[d.loneWolf!]} to win
-                              </span>
-                            )}
-                          </div>
-                          {wolfTeam.map(p => {
-                            const strokes = strokesThisHole[p] || 0;
-                            const isWolf = p === d.wolf;
-                            return (
-                              <div key={p} className="flex items-center gap-1.5 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className={`text-base flex items-center gap-1
-                                    ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-                                    {p}
-                                    {isWolf && <span className="text-[13px]">🐺</span>}
-                                    <StrokeDots count={strokes} className="ml-0.5" />
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <VsDivider />
-
-                        {/* Opponents */}
-                        <div className="bg-wolf-card rounded-xl border border-wolf-border pt-2.5 px-3.5 pb-1.5 mb-3">
-                          <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-2">
-                            {isLone ? 'THE FIELD' : 'OPPONENTS'}
-                          </div>
-                          {opponents.map(p => {
-                            const strokes = strokesThisHole[p] || 0;
-                            return (
-                              <div key={p} className="flex items-center gap-1.5 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-base flex items-center gap-1 text-wolf-text">
-                                    {p}
-                                    <StrokeDots count={strokes} className="ml-0.5" />
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <div className="text-center text-[13px] text-wolf-text-muted font-mono mb-4">
-                          Waiting for scores...
-                        </div>
-                      </>
-                    );
-                  })() : (
+                  {isSpectator && game.pendingWolfDecision?.holeNum === currentHole ? (
+                    <WolfPendingDecision
+                      pending={game.pendingWolfDecision}
+                      players={game.players}
+                      strokesThisHole={strokesThisHole}
+                    />
+                  ) : (
                     <>
-                      {/* Wolf badge */}
-                      <div className="flex items-center justify-center gap-2 py-2 px-4 bg-wolf-orange-bg
-                        rounded-[20px] border border-wolf-orange/20 mb-4 w-fit mx-auto">
-                        <span className="text-lg">🐺</span>
-                        <span className="text-wolf-orange font-bold text-base">{wolfName}</span>
-                        {roundPos >= (game.lastPlaceWolfStartHole ?? DEFAULT_LAST_PLACE_WOLF_START_HOLE) && (
-                          <span className="text-[10px] text-wolf-red font-mono bg-wolf-red-bg py-0.5 px-1.5 rounded">
-                            LAST PLACE
-                          </span>
-                        )}
-                      </div>
-
-                      {/* WHO POPS */}
-                      <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-4">
-                          <Label className="mb-2">PLAY ORDER</Label>
-                          {orderedPlayers.map((p, idx) => {
-                            const strokes = strokesThisHole[p];
-                            const isWolf = p === wolfName;
-                            return (
-                              <div
-                                key={p}
-                                className={`flex items-center justify-between py-[7px]
-                                  ${idx !== 0 ? 'border-t border-wolf-border' : ''}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {isWolf && <span className="text-sm">🐺</span>}
-                                  <span className={`text-[15px] ${isWolf ? 'font-bold text-wolf-orange' : 'text-wolf-text'}`}>
-                                    {p}
-                                  </span>
-                                  <span className="text-[11px] text-wolf-text-muted font-mono">
-                                    ({game.handicaps[p]} HC)
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  {strokes > 0 ? (
-                                    <>
-                                      {Array.from({ length: strokes }, (_, i) => (
-                                        <div key={i} className="w-2.5 h-2.5 rounded-full bg-wolf-accent" />
-                                      ))}
-                                      <span className="font-mono text-[13px] font-bold text-wolf-accent ml-0.5">
-                                        {strokes > 1 ? `${strokes} strokes` : '1 stroke'}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="font-mono text-xs text-wolf-text-muted">&mdash;</span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
+                      <WolfPlayOrder
+                        orderedPlayers={orderedPlayers}
+                        wolfName={wolfName}
+                        handicaps={game.handicaps}
+                        strokesThisHole={strokesThisHole}
+                        lastPlaceActive={roundPos >= (game.lastPlaceWolfStartHole ?? DEFAULT_LAST_PLACE_WOLF_START_HOLE)}
+                      />
 
                       {/* Quick standings (with optional skins tab) */}
                       <StandingsToggleCard game={game} standings={standings} skinsData={skinsData} />
