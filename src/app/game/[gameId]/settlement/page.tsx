@@ -13,12 +13,14 @@ export default function SettlementPage() {
   const params = useParams();
   const gameId = params.gameId as string;
   const { game, spectateGame } = useGame();
-  const [fetchingRemote, setFetchingRemote] = useState(false);
+  // Fetch from Supabase when we land here without the game in context (spectator
+  // or a fresh page load). Seed the loading flag from the initial game presence so
+  // we don't have to flip it synchronously inside the effect.
+  const [fetchingRemote, setFetchingRemote] = useState(!game);
 
   useEffect(() => {
     if (game) return;
     let cancelled = false;
-    setFetchingRemote(true);
     supabase
       .from('games')
       .select('state')
@@ -34,7 +36,7 @@ export default function SettlementPage() {
         setFetchingRemote(false);
       });
     return () => { cancelled = true; };
-  }, [gameId, game]);
+  }, [gameId, game, router, spectateGame]);
 
   const settlement = useMemo(
     () => game ? calculateSettlement(game) : null,

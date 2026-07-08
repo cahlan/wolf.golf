@@ -6,3 +6,4 @@ export { Field } from './field';
 export { Fade } from './fade';
 export { Input } from './input';
 export { BottomSheet } from './bottom-sheet';
+export { StrokeDots } from './stroke-dots';

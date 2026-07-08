@@ -849,11 +849,6 @@ describe('Scenario 10: Settlement math', () => {
   function buildSettlementHoles(): CompletedHole[] {
     const result: CompletedHole[] = [];
 
-    // Track points manually
-    const pointTracker: Record<string, number> = { Lance: 0, Cahlan: 0, Brad: 0, Shane: 0 };
-    // Track skins
-    const skinTracker: Record<string, number> = { Lance: 0, Cahlan: 0, Brad: 0, Shane: 0 };
-
     // Plan:
     // Points needed: Cahlan=10, Brad=6, Lance=4, Shane=2
     // Each team win gives +1 to each team member (2 points total distributed).
@@ -995,11 +990,8 @@ describe('Scenario 10: Settlement math', () => {
   });
 
   it('transfers should sum to zero (debits = credits)', () => {
-    const debits = settlement.transfers.reduce((s, t) => s + t.amount, 0);
-    const credits = settlement.transfers.reduce((s, t) => s + t.amount, 0);
-    // Each transfer has a from (debit) and to (credit) with the same amount.
-    // The total transferred out should equal total transferred in.
-    // Actually, let's verify by player:
+    // Each transfer has a from (debit) and to (credit) with the same amount,
+    // so the net across all players should be zero. Verify by player:
     const net: Record<string, number> = {};
     PLAYERS.forEach((p) => (net[p] = 0));
     settlement.transfers.forEach((t) => {

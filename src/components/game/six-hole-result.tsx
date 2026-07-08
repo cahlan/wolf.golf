@@ -3,7 +3,7 @@
 import type { Game, CompletedHole } from '@/lib/types/game';
 import { getPlayerStrokesOnHole } from '@/lib/engine';
 import { calculateSixHolePoints, getSixHoleMatchupDetail, getTeamsForHole } from '@/lib/engine/six';
-import { Label } from '@/components/ui';
+import { Label, StrokeDots } from '@/components/ui';
 
 export function SixHoleResultDetail({ game, hole }: { game: Game; hole: CompletedHole }) {
   const { teamA, teamB } = getTeamsForHole(game, hole.holeNum);
@@ -23,13 +23,7 @@ export function SixHoleResultDetail({ game, hole }: { game: Game; hole: Complete
       >
         <div className="flex items-center gap-1.5">
           <span className="text-base text-wolf-text">{p}</span>
-          {strokes > 0 && (
-            <span className="inline-flex gap-0.5 ml-0.5">
-              {Array.from({ length: strokes }, (_, i) => (
-                <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-              ))}
-            </span>
-          )}
+          <StrokeDots count={strokes} className="ml-0.5" />
         </div>
         <div className="flex items-center gap-3 font-mono">
           <span className="text-[13px] text-wolf-text-muted">{gross}</span>

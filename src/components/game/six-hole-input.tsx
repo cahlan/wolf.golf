@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { Game, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole } from '@/lib/engine';
 import { calculateSixHolePoints, getSixHoleMatchupDetail } from '@/lib/engine/six';
-import { Button, Fade, Label } from '@/components/ui';
+import { Button, Fade, Label, StrokeDots } from '@/components/ui';
 
 interface SixHoleInputProps {
   game: Game;
@@ -68,13 +68,7 @@ export function SixHoleInput({
         <div className="flex-1 min-w-0">
           <div className="text-base flex items-center gap-1 text-wolf-text">
             {p}
-            {strokes > 0 && (
-              <span className="inline-flex gap-0.5 ml-0.5">
-                {Array.from({ length: strokes }, (_, i) => (
-                  <span key={i} className="w-1.5 h-1.5 rounded-full bg-wolf-accent inline-block" />
-                ))}
-              </span>
-            )}
+            <StrokeDots count={strokes} className="ml-0.5" />
           </div>
         </div>
         <Button

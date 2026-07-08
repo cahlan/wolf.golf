@@ -1,6 +1,6 @@
 export { LONE_WOLF_POINTS, WEEKEND_PLACEMENT_POINTS } from './constants';
 export { generateCode, createGame } from './game';
-export { createCourse, courseHoleForRoundPos, holesRemainingInRound } from './course';
+export { createCourse, courseHoleForRoundPos } from './course';
 export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';
 export { getWolfForHole } from './wolf';
 export { getTeeOrderForHole } from './tee-order';
