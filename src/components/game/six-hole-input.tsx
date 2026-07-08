@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { Game, HoleInfo } from '@/lib/types/game';
 import { getPlayerStrokesOnHole } from '@/lib/engine';
 import { calculateSixHolePoints, getSixHoleMatchupDetail } from '@/lib/engine/six';
-import { Button, Fade, Label, StrokeDots } from '@/components/ui';
+import { Button, Fade, Label, StrokeDots, VsDivider, HolePointsTotals } from '@/components/ui';
 
 interface SixHoleInputProps {
   game: Game;
@@ -126,13 +126,7 @@ export function SixHoleInput({
         {teamA.map(renderPlayerRow)}
       </div>
 
-      {/* VS divider */}
-      <div className="text-center py-1 mb-3 relative">
-        <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
-        <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
-          VS
-        </span>
-      </div>
+      <VsDivider />
 
       {/* Team B */}
       <div className="bg-wolf-card rounded-xl border border-wolf-border pt-2.5 px-3.5 pb-1.5 mb-3">
@@ -170,20 +164,7 @@ export function SixHoleInput({
           {matchupDetail.summary}
         </div>
 
-        <div className="flex justify-around mt-2.5">
-          {game.players.map(p => {
-            const pts = previewPoints[p];
-            return (
-              <div key={p} className="text-center">
-                <div className="text-[11px] text-wolf-text-muted">{p.slice(0, 5)}</div>
-                <div className={`font-mono font-extrabold text-lg
-                  ${pts > 0 ? 'text-wolf-accent' : 'text-wolf-text-muted'}`}>
-                  {pts > 0 ? `+${pts}` : '—'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <HolePointsTotals players={game.players} points={previewPoints} />
       </div>
 
       <div className="flex gap-2.5 mt-5">

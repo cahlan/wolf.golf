@@ -23,7 +23,7 @@ import {
   DEFAULT_LAST_PLACE_WOLF_START_HOLE,
 } from '@/lib/engine/constants';
 import { getSegmentForHole } from '@/lib/engine/six';
-import { Button, Label, BottomSheet, StrokeDots } from '@/components/ui';
+import { Button, Label, BottomSheet, StrokeDots, VsDivider } from '@/components/ui';
 import { HoleInputFlow } from '@/components/game/hole-input-flow';
 import { SixHoleInput } from '@/components/game/six-hole-input';
 import { ThreeTwoOneHoleInput } from '@/components/game/three-two-one-hole-input';
@@ -628,12 +628,7 @@ function GameView({
                         })}
                       </div>
 
-                      <div className="text-center py-1 mb-3 relative">
-                        <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
-                        <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
-                          VS
-                        </span>
-                      </div>
+                      <VsDivider />
 
                       <div className="bg-wolf-card rounded-xl border border-wolf-border p-3.5 mb-3">
                         <div className="text-xs font-mono text-wolf-text-sec font-semibold tracking-[1.5px] mb-2">
@@ -747,13 +742,7 @@ function GameView({
                           })}
                         </div>
 
-                        {/* VS divider */}
-                        <div className="text-center py-1 mb-3 relative">
-                          <div className="absolute top-1/2 left-0 right-0 border-t border-wolf-border" />
-                          <span className="relative bg-wolf-bg px-3.5 text-xs font-mono text-wolf-text-muted font-semibold tracking-[2px]">
-                            VS
-                          </span>
-                        </div>
+                        <VsDivider />
 
                         {/* Opponents */}
                         <div className="bg-wolf-card rounded-xl border border-wolf-border pt-2.5 px-3.5 pb-1.5 mb-3">
