@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
-import { supabase } from '@/lib/supabase/client';
+import { fetchGameState } from '@/lib/supabase/games';
 import { BackButton, Title, Sub, Button } from '@/components/ui';
-import type { Game } from '@/lib/types/game';
 
 function JoinPageInner() {
   const router = useRouter();
@@ -20,19 +19,15 @@ function JoinPageInner() {
     setLoading(true);
     setError('');
 
-    const { data, error: dbError } = await supabase
-      .from('games')
-      .select('state')
-      .eq('id', joinCode)
-      .single();
+    const state = await fetchGameState(joinCode);
 
-    if (dbError || !data) {
+    if (!state) {
       setError('Game not found. Check the code and try again.');
       setLoading(false);
       return;
     }
 
-    spectateGame(data.state as Game);
+    spectateGame(state);
     router.push(`/game/${joinCode}`);
   }, [spectateGame, router]);
 

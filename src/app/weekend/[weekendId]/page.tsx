@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { calculateWeekendStandings, calculateStandings, WEEKEND_PLACEMENT_POINTS } from '@/lib/engine';
 import type { Game } from '@/lib/types/game';
-import { supabase } from '@/lib/supabase/client';
+import { upsertGameState } from '@/lib/supabase/games';
 import { BackButton, Button, Fade, Label, BottomSheet } from '@/components/ui';
 
 function formatRoundLabel(game: Game, index: number) {
@@ -232,13 +232,7 @@ export default function WeekendPage() {
                   updateWeekendGame(updated);
 
                   // Persist to Supabase
-                  const { error } = await supabase
-                    .from('games')
-                    .upsert({ id: updated.id, state: updated, updated_at: new Date().toISOString() });
-
-                  if (error) {
-                    console.error('[weekend] Failed to sync weekend placement override:', error.message);
-                  }
+                  await upsertGameState(updated);
 
                   setEditGameId(null);
                 }}
