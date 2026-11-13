@@ -3,7 +3,8 @@ import { calculateGameHolePoints } from './scoring-utils';
 
 export function calculateStandings(game: Game): Standing[] {
   const totals: Record<string, number> = {};
-  game.players.forEach((p) => (totals[p] = 0));
+  // Seed with starting points (carryover) if set, otherwise 0
+  game.players.forEach((p) => (totals[p] = game.startingPoints?.[p] ?? 0));
 
   game.holes.forEach((hole) => {
     const pts = calculateGameHolePoints(game, hole);
