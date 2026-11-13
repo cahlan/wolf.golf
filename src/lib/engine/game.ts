@@ -28,5 +28,6 @@ export function createGame(params: CreateGameParams): Game {
     lastPlaceWolfStartHole: params.lastPlaceWolfStartHole,
     payoutStructure: params.payoutStructure,
     skinsCarryover: params.skinsCarryover,
+    startingPoints: params.startingPoints,
   };
 }

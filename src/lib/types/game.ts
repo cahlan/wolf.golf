@@ -156,4 +156,5 @@ export interface CreateGameParams {
   lastPlaceWolfStartHole?: number;
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split';
   skinsCarryover?: boolean;
+  startingPoints?: Record<string, number>;
 }
