@@ -151,18 +151,18 @@ export function CourseStep({
                 onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
                 placeholder="e.g. Sky Mountain, Thanksgiving Point…"
-                className="flex-1 bg-wolf-card border border-wolf-border rounded-[10px] px-3.5 py-3
-                  text-wolf-text text-[15px] font-body placeholder:text-wolf-text-sec/50
+                className="flex-1 min-w-0 bg-wolf-card border border-wolf-border rounded-[10px] px-3 py-3
+                  text-wolf-text text-[14px] font-body placeholder:text-wolf-text-sec/50
                   focus:outline-none focus:border-wolf-accent/50"
               />
-              <Button
-                variant="primary"
+              <button
                 onClick={handleSearch}
                 disabled={searchState === 'loading' || !searchQuery.trim()}
-                className="shrink-0 px-4"
+                className="shrink-0 px-4 py-3 rounded-[10px] bg-wolf-accent text-wolf-bg text-[14px]
+                  font-body font-semibold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
               >
                 {searchState === 'loading' ? '…' : 'Search'}
-              </Button>
+              </button>
             </div>
             {searchState === 'error' && (
               <p className="text-red-400 text-[13px] mt-1.5">{searchError}</p>
