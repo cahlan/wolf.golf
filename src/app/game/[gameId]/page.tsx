@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useGame } from '@/providers/game-provider';
 import { supabase } from '@/lib/supabase/client';
 import { fetchGameState } from '@/lib/supabase/games';
+import { loadActiveGame } from '@/lib/storage/local';
 import {
   calculateStandings,
   calculateSkins,
@@ -47,17 +48,29 @@ export default function GamePage() {
   const hasFetched = useRef(false);
   const [watcherCount, setWatcherCount] = useState(0);
 
+  // Determine synchronously (before any effect) whether this client should be scorekeeper.
+  // We check ?keeper=1 and localStorage here so the value is stable before effects run.
+  // This ref is set once on mount and never changes, preventing the race where the
+  // spectator-fetch effect fires before the keeper-restore effect applies.
+  const isScorekeeperRef = useRef<boolean | null>(null);
+  if (isScorekeeperRef.current === null) {
+    const wantsKeeper = searchParams.get('keeper') === '1';
+    const active = loadActiveGame();
+    isScorekeeperRef.current = wantsKeeper || (!!active && active.id === gameId);
+  }
+
   // Attempt to restore scorekeeper mode after refresh.
   // If the URL has ?keeper=1 OR we have an active game in localStorage matching this id,
   // set scorekeeper=true so we don't auto-join as spectator.
   useEffect(() => {
     if (isScorekeeper) return;
+    if (!isScorekeeperRef.current) return;
 
-    const wantsKeeper = searchParams.get('keeper') === '1';
+    // resumeGame loads the game from localStorage into context and sets isScorekeeper
     const active = resumeGame();
-    const canResumeThisGame = !!active && active.id === gameId;
-
-    if (wantsKeeper || canResumeThisGame) {
+    if (!active || active.id !== gameId) {
+      // ?keeper=1 but no matching local game — still mark as scorekeeper so
+      // the Supabase fetch below doesn't clobber us with spectateGame()
       setIsScorekeeper(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,7 +82,10 @@ export default function GamePage() {
 
   // Fetch from Supabase for non-scorekeepers (on mount, or if no game in context)
   useEffect(() => {
-    if (isScorekeeper || hasFetched.current) return;
+    // Skip fetch if we determined on mount that this client is the scorekeeper.
+    // This prevents the race condition where the fetch resolves and calls spectateGame()
+    // after the keeper-restore effect has already set isScorekeeper=true.
+    if (isScorekeeperRef.current || isScorekeeper || hasFetched.current) return;
     hasFetched.current = true;
     setLoading(true);
     fetchGameState(gameId).then(state => {
