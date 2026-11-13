@@ -19,6 +19,22 @@ jobs:
       - run: npm ci
       - run: npm run test:unit
 
+  build:
+    name: Build (typecheck + next build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+        env:
+          # Dummy values: the Supabase client requires these at module load.
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key
+
   e2e-tests:
     name: E2E Tests (non-blocking)
     runs-on: ubuntu-latest
