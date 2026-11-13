@@ -56,6 +56,7 @@ export interface Game {
   lastPlaceWolf?: boolean;              // default: true
   lastPlaceWolfStartHole?: number;      // default: 17
   payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
+  startingPoints?: Record<string, number>;        // optional per-player point offset (carryover)
   skinsCarryover?: boolean;             // default: true
   pendingWolfDecision?: PendingWolfDecision | null;
 

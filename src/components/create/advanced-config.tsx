@@ -7,6 +7,7 @@ import { Button, Label } from '@/components/ui';
 
 interface AdvancedConfigProps {
   gameType?: GameType;
+  players: string[];
   buyIn: number;
   startingHole: number;
   lastPlaceWolf: boolean;
@@ -14,11 +15,13 @@ interface AdvancedConfigProps {
   payoutStructure: 'winner-takes-all' | 'top-two-split' | 'top-three-split';
   skinsCarryover: boolean;
   skinsEnabled: boolean;
+  startingPoints: Record<string, number>;
   onStartingHoleChange: (value: number) => void;
   onLastPlaceWolfChange: (value: boolean) => void;
   onLastPlaceWolfStartHoleChange: (value: number) => void;
   onPayoutStructureChange: (value: 'winner-takes-all' | 'top-two-split' | 'top-three-split') => void;
   onSkinsCarryoverChange: (value: boolean) => void;
+  onStartingPointsChange: (value: Record<string, number>) => void;
 }
 
 const PAYOUT_OPTIONS: {
@@ -45,6 +48,7 @@ const PAYOUT_OPTIONS: {
 
 export function AdvancedConfig({
   gameType = 'wolf',
+  players,
   buyIn,
   startingHole,
   lastPlaceWolf,
@@ -52,11 +56,13 @@ export function AdvancedConfig({
   payoutStructure,
   skinsCarryover,
   skinsEnabled,
+  startingPoints,
   onStartingHoleChange,
   onLastPlaceWolfChange,
   onLastPlaceWolfStartHoleChange,
   onPayoutStructureChange,
   onSkinsCarryoverChange,
+  onStartingPointsChange,
 }: AdvancedConfigProps) {
   const isWolf = gameType === 'wolf';
   const isThreeTwoOne = gameType === 'three-two-one';
@@ -185,6 +191,45 @@ export function AdvancedConfig({
               </p>
             </div>
           )}
+
+          {/* Starting points (carryover) — all game types */}
+          <div className="bg-wolf-card border border-wolf-border rounded-[10px] p-3.5">
+            <div className="mb-2.5">
+              <span className="text-wolf-text text-[15px] font-body block">Starting points</span>
+              <span className="text-wolf-text-muted text-[12px] font-body">
+                Carry over points from a previous game
+              </span>
+            </div>
+            <div className="space-y-2">
+              {players.filter(p => p.trim()).map(player => {
+                const pts = startingPoints[player] ?? 0;
+                return (
+                  <div key={player} className="flex items-center justify-between">
+                    <span className="text-wolf-text text-[14px] font-body truncate max-w-[120px]">{player}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="score"
+                        onClick={() => onStartingPointsChange({ ...startingPoints, [player]: pts - 1 })}
+                      >
+                        −
+                      </Button>
+                      <span className={`w-8 text-center text-base font-mono ${
+                        pts > 0 ? 'text-wolf-accent' : pts < 0 ? 'text-red-400' : 'text-wolf-text'
+                      }`}>
+                        {pts > 0 ? `+${pts}` : pts}
+                      </span>
+                      <Button
+                        variant="score"
+                        onClick={() => onStartingPointsChange({ ...startingPoints, [player]: pts + 1 })}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Skins carryover — wolf only */}
           {skinsEnabled && isWolf && (

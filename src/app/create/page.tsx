@@ -44,6 +44,7 @@ export default function CreateGamePage() {
   const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(DEFAULT_LAST_PLACE_WOLF_START_HOLE);
   const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('winner-takes-all');
   const [skinsCarryover, setSkinsCarryover] = useState(true);
+  const [startingPoints, setStartingPoints] = useState<Record<string, number>>({});
 
   // Course state
   const [savedCourses, setSavedCourses] = useState<Course[]>(() => loadSavedCourses());
@@ -129,6 +130,7 @@ export default function CreateGamePage() {
       lastPlaceWolfStartHole: gameType === 'wolf' ? lastPlaceWolfStartHole : undefined,
       payoutStructure: isThreeTwoOne ? undefined : payoutStructure,
       skinsCarryover,
+      startingPoints: Object.keys(startingPoints).length > 0 ? startingPoints : undefined,
     });
 
     setGame(g);
@@ -255,6 +257,7 @@ export default function CreateGamePage() {
           advancedSlot={
             <AdvancedConfig
               gameType={gameType}
+              players={activePlayers.filter(p => p.trim())}
               buyIn={buyIn}
               startingHole={startingHole}
               lastPlaceWolf={lastPlaceWolf}
@@ -262,11 +265,13 @@ export default function CreateGamePage() {
               payoutStructure={payoutStructure}
               skinsCarryover={skinsCarryover}
               skinsEnabled={skinsEnabled}
+              startingPoints={startingPoints}
               onStartingHoleChange={setStartingHole}
               onLastPlaceWolfChange={setLastPlaceWolf}
               onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
               onPayoutStructureChange={setPayoutStructure}
               onSkinsCarryoverChange={setSkinsCarryover}
+              onStartingPointsChange={setStartingPoints}
             />
           }
         />
@@ -285,6 +290,7 @@ export default function CreateGamePage() {
           advancedSlot={
             <AdvancedConfig
               gameType={gameType}
+              players={activePlayers.filter(p => p.trim())}
               buyIn={buyIn}
               startingHole={startingHole}
               lastPlaceWolf={lastPlaceWolf}
@@ -292,11 +298,13 @@ export default function CreateGamePage() {
               payoutStructure={payoutStructure}
               skinsCarryover={skinsCarryover}
               skinsEnabled={skinsEnabled}
+              startingPoints={startingPoints}
               onStartingHoleChange={setStartingHole}
               onLastPlaceWolfChange={setLastPlaceWolf}
               onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
               onPayoutStructureChange={setPayoutStructure}
               onSkinsCarryoverChange={setSkinsCarryover}
+              onStartingPointsChange={setStartingPoints}
             />
           }
         />
@@ -308,6 +316,7 @@ export default function CreateGamePage() {
             <h2 className="text-xl font-semibold text-wolf-text mb-4">Game Setup</h2>
             <AdvancedConfig
               gameType={gameType}
+              players={activePlayers.filter(p => p.trim())}
               buyIn={buyIn}
               startingHole={startingHole}
               lastPlaceWolf={lastPlaceWolf}
@@ -315,11 +324,13 @@ export default function CreateGamePage() {
               payoutStructure={payoutStructure}
               skinsCarryover={skinsCarryover}
               skinsEnabled={skinsEnabled}
+              startingPoints={startingPoints}
               onStartingHoleChange={setStartingHole}
               onLastPlaceWolfChange={setLastPlaceWolf}
               onLastPlaceWolfStartHoleChange={setLastPlaceWolfStartHole}
               onPayoutStructureChange={setPayoutStructure}
               onSkinsCarryoverChange={setSkinsCarryover}
+              onStartingPointsChange={setStartingPoints}
             />
           </div>
           <div className="flex gap-2 pt-4">
