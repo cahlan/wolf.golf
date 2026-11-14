@@ -20,6 +20,13 @@ Extract the following data for all 18 holes (front 9 and back 9):
 1. Par for each hole (must be 3, 4, or 5)
 2. Handicap/Stroke Index for each hole (must be unique integers 1-18, where 1 = hardest)
 
+Read the card column by column: for each hole number, read straight down that
+column to its Par and Handicap cells — the Par row is often far below the hole
+numbers, so don't let your eye slip to a neighbouring column. Before answering,
+sanity-check each par against that hole's yardages (par 3s are short, par 5s
+are the longest holes) and check the front/back par totals against the OUT/IN
+columns. Re-read any hole that doesn't fit.
+
 Also extract the course name if visible ("Unknown Course" if not).
 
 List all 18 holes in order and set "error" to null.
@@ -97,7 +104,8 @@ export async function POST(req: NextRequest) {
         // Thinking tokens count toward max_tokens; leave room so the JSON isn't cut off.
         max_tokens: 16000,
         output_config: {
-          effort: 'low',
+          // low effort misread back-nine pars on a real card; accuracy matters more than latency here
+          effort: 'high',
           format: { type: 'json_schema', schema: SCORECARD_SCHEMA },
         },
         messages: [
