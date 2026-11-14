@@ -45,7 +45,7 @@ export default function CreateGamePage() {
   const [startingHole, setStartingHole] = useState(DEFAULT_STARTING_HOLE);
   const [lastPlaceWolf, setLastPlaceWolf] = useState(true);
   const [lastPlaceWolfStartHole, setLastPlaceWolfStartHole] = useState(DEFAULT_LAST_PLACE_WOLF_START_HOLE);
-  const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('winner-takes-all');
+  const [payoutStructure, setPayoutStructure] = useState<'winner-takes-all' | 'top-two-split' | 'top-three-split'>('top-two-split');
   const [skinsCarryover, setSkinsCarryover] = useState(true);
   const [startingPoints, setStartingPoints] = useState<Record<string, number>>({});
 

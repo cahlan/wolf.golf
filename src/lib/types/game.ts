@@ -55,7 +55,7 @@ export interface Game {
   startingHole?: number;                // default: 1
   lastPlaceWolf?: boolean;              // default: true
   lastPlaceWolfStartHole?: number;      // default: 17
-  payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // default: 'winner-takes-all'
+  payoutStructure?: 'winner-takes-all' | 'top-two-split' | 'top-three-split'; // absent = 'winner-takes-all' (games created before this option); new games default to 'top-two-split'
   startingPoints?: Record<string, number>;        // optional per-player point offset (carryover)
   skinsCarryover?: boolean;             // default: true
   pendingWolfDecision?: PendingWolfDecision | null;
