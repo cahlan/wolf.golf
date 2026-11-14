@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import type { Game } from '@/lib/types/game';
-import { HOLES_PER_ROUND } from '@/lib/engine';
-import { BottomSheet, Label } from '@/components/ui';
+import { HOLES_PER_ROUND, getPlayerStrokesOnHole } from '@/lib/engine';
+import { BottomSheet, Label, StrokeDots } from '@/components/ui';
+
+type ScoreView = 'gross' | 'net';
 
 function sum(vals: number[]) {
   return vals.reduce((a, b) => a + b, 0);
 }
 
 export function ScorecardSheet({ game, open, onClose }: { game: Game; open: boolean; onClose: () => void }) {
+  const [view, setView] = useState<ScoreView>('gross');
   const holes = Array.from({ length: HOLES_PER_ROUND }, (_, i) => i + 1);
 
   const holeByNum = new Map(game.holes.map(h => [h.holeNum, h] as const));
@@ -25,7 +29,18 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-base font-bold">Scorecard</div>
-          <div className="text-[11px] font-mono text-wolf-text-muted">gross/net by hole</div>
+        </div>
+        <div className="flex rounded-[8px] border border-wolf-border overflow-hidden text-[11px] font-mono">
+          {(['gross', 'net'] as const).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-3 py-1 border-none cursor-pointer transition-colors
+                ${view === v ? 'bg-wolf-accent text-wolf-bg font-semibold' : 'bg-transparent text-wolf-text-muted'}`}
+            >
+              {v === 'gross' ? 'Gross' : 'Net'}
+            </button>
+          ))}
         </div>
         <button
           onClick={onClose}
@@ -40,10 +55,9 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
         <table className="w-full border-collapse text-[12px] font-mono">
           <thead>
             <tr className="bg-wolf-card">
-              <th className="py-2 px-2.5 text-left text-wolf-text-muted font-medium">Player</th>
+              <th className="sticky left-0 z-10 bg-wolf-card py-2 px-2.5 text-left text-wolf-text-muted font-medium">Player</th>
               {holes.map((hNum) => {
-                const hole = holeByNum.get(hNum);
-                const par = hole?.par;
+                const par = game.course.holes[hNum - 1]?.par;
                 return (
                   <th
                     key={hNum}
@@ -60,9 +74,9 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
           <tbody>
             {game.players.map((p) => (
               <tr key={p} className="border-t border-wolf-border">
-                <td className="py-2 px-2.5 text-wolf-text whitespace-nowrap">
-                  <span className="font-semibold">{p}</span>{' '}
-                  <span className="text-[10px] text-wolf-text-muted">({game.handicaps[p]} HC)</span>
+                <td className="sticky left-0 z-10 bg-wolf-card py-2 px-2.5 text-wolf-text whitespace-nowrap">
+                  <div className="font-semibold">{p}</div>
+                  <div className="text-[10px] text-wolf-text-muted">{game.handicaps[p]} HC</div>
                 </td>
 
                 {holes.map((hNum) => {
@@ -70,27 +84,26 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
                   const g = hole?.grossScores?.[p];
                   const n = hole?.netScores?.[p];
                   const played = typeof g === 'number' && typeof n === 'number';
+                  const score = view === 'gross' ? g : n;
+                  const underPar = played && hole && score! < hole.par;
                   return (
-                    <td key={hNum} className="py-2 px-2 text-center whitespace-nowrap">
+                    <td key={hNum} className="py-2 px-2 text-center whitespace-nowrap align-top">
                       {played ? (
-                        <span className="text-wolf-text">
-                          {g}
-                          <span className="text-wolf-text-muted">/</span>
-                          <span className="text-wolf-accent font-semibold">{n}</span>
-                        </span>
+                        <div className={underPar ? 'text-wolf-accent font-semibold' : 'text-wolf-text'}>{score}</div>
                       ) : (
-                        <span className="text-wolf-text-muted">·</span>
+                        <div className="text-wolf-text-muted">·</div>
                       )}
+                      {/* Fixed-height slot keeps rows even across players and views; in gross view
+                          dots also show strokes on holes not yet played */}
+                      <div className="h-1.5 mt-1 flex justify-center">
+                        {view === 'gross' && <StrokeDots count={getPlayerStrokesOnHole(game, p, hNum)} />}
+                      </div>
                     </td>
                   );
                 })}
 
                 <td className="py-2 px-2 text-center whitespace-nowrap">
-                  <span className="text-wolf-text">
-                    {totals[p].gross}
-                    <span className="text-wolf-text-muted">/</span>
-                    <span className="text-wolf-accent font-semibold">{totals[p].net}</span>
-                  </span>
+                  <span className="text-wolf-text font-semibold">{totals[p][view]}</span>
                 </td>
               </tr>
             ))}
@@ -99,7 +112,9 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
       </div>
 
       <div className="mt-2 text-[11px] font-mono text-wolf-text-muted">
-        Tip: cell format is <span className="text-wolf-text">gross</span>/<span className="text-wolf-accent font-semibold">net</span>
+        {view === 'gross'
+          ? <>Dots mark holes where a player gets a stroke. <span className="text-wolf-accent font-semibold">Green</span> = under par.</>
+          : <>Net = gross minus strokes. <span className="text-wolf-accent font-semibold">Green</span> = under par.</>}
       </div>
     </BottomSheet>
   );
