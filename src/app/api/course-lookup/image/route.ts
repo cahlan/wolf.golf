@@ -22,10 +22,10 @@ Extract the following data for all 18 holes (front 9 and back 9):
 
 Read the card column by column: for each hole number, read straight down that
 column to its Par and Handicap cells — the Par row is often far below the hole
-numbers, so don't let your eye slip to a neighbouring column. Before answering,
-sanity-check each par against that hole's yardages (par 3s are short, par 5s
-are the longest holes) and check the front/back par totals against the OUT/IN
-columns. Re-read any hole that doesn't fit.
+numbers, so don't let your eye slip to a neighbouring column. Report exactly
+what the Par row prints — don't infer par from yardage (long par 4s and short
+par 5s are common). Before answering, check the front/back par totals against
+the OUT/IN columns and re-read the row if they don't match.
 
 Also extract the course name if visible ("Unknown Course" if not).
 
