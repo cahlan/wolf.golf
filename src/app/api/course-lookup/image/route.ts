@@ -12,6 +12,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { HoleInfo } from '@/lib/types/game';
 
+// Vision extraction at high effort can take 15-30s.
+export const maxDuration = 60;
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -98,13 +101,17 @@ export async function POST(req: NextRequest) {
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
+        'anthropic-beta': 'server-side-fallback-2026-07-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-5-5',
+        // Haiku 5.5 misread 1-4 back-nine pars on most runs of a real card; scans are
+        // rare, so the stronger model is worth the ~1-2¢ per scan.
+        model: 'claude-sonnet-5-5',
+        // If a safety classifier declines, the API retries on a fallback model in the same call.
+        fallbacks: 'default',
         // Thinking tokens count toward max_tokens; leave room so the JSON isn't cut off.
         max_tokens: 16000,
         output_config: {
-          // low effort misread back-nine pars on a real card; accuracy matters more than latency here
           effort: 'high',
           format: { type: 'json_schema', schema: SCORECARD_SCHEMA },
         },
@@ -137,7 +144,7 @@ export async function POST(req: NextRequest) {
     }
 
     const json = await anthropicRes.json();
-    // Haiku 5.5 thinks by default, so content[0] is usually a thinking block — find the text block.
+    // Current models think by default, so content[0] is usually a thinking block — find the text block.
     const textBlock = json.content?.find((b: { type: string }) => b.type === 'text');
     responseText = textBlock?.text ?? '';
     if (json.stop_reason !== 'end_turn') {
