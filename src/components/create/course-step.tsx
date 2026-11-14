@@ -25,6 +25,27 @@ interface CourseStepProps {
 
 type SearchState = 'idle' | 'loading' | 'error';
 
+// Claude downscales anything larger, and full-size phone photos can exceed
+// Vercel's 4.5 MB request body limit.
+const MAX_UPLOAD_EDGE = 1568;
+
+/** Downscale a photo to MAX_UPLOAD_EDGE on its long side and re-encode as JPEG. */
+async function shrinkImage(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, MAX_UPLOAD_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    return blob ?? file;
+  } catch {
+    return file; // decoding unsupported — send the original
+  }
+}
+
 export function CourseStep({
   savedCourses, selectedCourse, setSelectedCourse,
   courseName, setCourseName, courseHoles, setCourseHoles,
@@ -75,7 +96,7 @@ export function CourseStep({
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', await shrinkImage(file), 'scorecard.jpg');
       const res = await fetch('/api/course-lookup/image', {
         method: 'POST',
         body: formData,
@@ -202,7 +223,6 @@ export function CourseStep({
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handleImageUpload}
               className="hidden"
               id="scorecard-upload"
