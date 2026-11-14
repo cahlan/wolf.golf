@@ -1,4 +1,4 @@
-import type { Game, Course, PlayerProfile } from '../types/game';
+import type { Game, Course, PlayerProfile, GameType, HoleInfo } from '../types/game';
 
 // ============================================================================
 // SAVED COURSES
@@ -111,6 +111,59 @@ export function getSuggestedHandicap(name: string): number | null {
 export function getSuggestedPlayers(): PlayerProfile[] {
   const cache = loadPlayerCache();
   return Object.values(cache);
+}
+
+// ============================================================================
+// CREATE-GAME DRAFT
+// ============================================================================
+
+// Mobile browsers discard backgrounded tabs, so the half-filled create form is
+// saved on every change and restored on reload. Stale drafts are dropped.
+const CREATE_DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+export interface CreateGameDraft {
+  step: number;
+  gameType: GameType;
+  players: string[];
+  handicaps: number[];
+  buyIn: number;
+  skinsEnabled: boolean;
+  skinsValue: number;
+  wolfOrder: number[];
+  teamSegments: [number, number][];
+  startingHole: number;
+  lastPlaceWolf: boolean;
+  lastPlaceWolfStartHole: number;
+  payoutStructure: 'winner-takes-all' | 'top-two-split' | 'top-three-split';
+  skinsCarryover: boolean;
+  startingPoints: Record<string, number>;
+  selectedCourse: Course | null;
+  courseName: string;
+  courseHoles: HoleInfo[];
+  courseMode: 'select' | 'new';
+}
+
+export function saveCreateDraft(draft: CreateGameDraft): void {
+  try {
+    localStorage.setItem('wolf_create_draft', JSON.stringify({ savedAt: Date.now(), draft }));
+  } catch {}
+}
+
+export function loadCreateDraft(): CreateGameDraft | null {
+  try {
+    const data = localStorage.getItem('wolf_create_draft');
+    if (!data) return null;
+    const { savedAt, draft } = JSON.parse(data);
+    if (Date.now() - savedAt > CREATE_DRAFT_MAX_AGE_MS) {
+      clearCreateDraft();
+      return null;
+    }
+    return draft;
+  } catch { return null; }
+}
+
+export function clearCreateDraft(): void {
+  try { localStorage.removeItem('wolf_create_draft'); } catch {}
 }
 
 // ============================================================================

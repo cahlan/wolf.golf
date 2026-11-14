@@ -10,7 +10,10 @@ import {
   DEFAULT_STARTING_HOLE,
   DEFAULT_LAST_PLACE_WOLF_START_HOLE,
 } from '@/lib/engine';
-import { loadSavedCourses, saveCourse, getSuggestedHandicap, getSuggestedPlayers, savePlayerCache } from '@/lib/storage/local';
+import {
+  loadSavedCourses, saveCourse, getSuggestedHandicap, getSuggestedPlayers, savePlayerCache,
+  loadCreateDraft, saveCreateDraft, clearCreateDraft,
+} from '@/lib/storage/local';
 import { fetchCoursesFromSupabase, upsertCourseToSupabase } from '@/lib/supabase/courses';
 import { BackButton } from '@/components/ui';
 import { PlayersStep } from '@/components/create/players-step';
@@ -66,6 +69,59 @@ export default function CreateGamePage() {
     Array.from({ length: HOLES_PER_ROUND }, () => ({ par: 4 as const, strokeIndex: 0 }))
   );
   const [courseMode, setCourseMode] = useState<'select' | 'new'>('select');
+
+  // Restore a half-finished setup (e.g. after iOS discards the backgrounded tab).
+  // Saving waits until the restore has run so defaults don't overwrite the draft.
+  // Restored in an effect (not useState initializers) because /create is prerendered
+  // without localStorage — reading it during render would cause a hydration mismatch.
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const d = loadCreateDraft();
+    if (d) {
+      setStep(d.step);
+      setGameType(d.gameType);
+      setPlayers(d.players);
+      setHandicaps(d.handicaps);
+      setBuyIn(d.buyIn);
+      setSkinsEnabled(d.skinsEnabled);
+      setSkinsValue(d.skinsValue);
+      setWolfOrder(d.wolfOrder);
+      setTeamSegments(d.teamSegments);
+      setStartingHole(d.startingHole);
+      setLastPlaceWolf(d.lastPlaceWolf);
+      setLastPlaceWolfStartHole(d.lastPlaceWolfStartHole);
+      setPayoutStructure(d.payoutStructure);
+      setSkinsCarryover(d.skinsCarryover);
+      setStartingPoints(d.startingPoints);
+      setSelectedCourse(d.selectedCourse);
+      setCourseName(d.courseName);
+      setCourseHoles(d.courseHoles);
+      setCourseMode(d.courseMode);
+      setDraftRestored(true);
+    }
+    setDraftLoaded(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    saveCreateDraft({
+      step, gameType, players, handicaps, buyIn, skinsEnabled, skinsValue, wolfOrder,
+      teamSegments, startingHole, lastPlaceWolf, lastPlaceWolfStartHole, payoutStructure,
+      skinsCarryover, startingPoints, selectedCourse, courseName, courseHoles, courseMode,
+    });
+  }, [
+    draftLoaded, step, gameType, players, handicaps, buyIn, skinsEnabled, skinsValue, wolfOrder,
+    teamSegments, startingHole, lastPlaceWolf, lastPlaceWolfStartHole, payoutStructure,
+    skinsCarryover, startingPoints, selectedCourse, courseName, courseHoles, courseMode,
+  ]);
+
+  function handleStartOver() {
+    clearCreateDraft();
+    window.location.reload();
+  }
 
   const activePlayers = players.slice(0, playerCount);
   const allPlayersFilled = activePlayers.every(p => p.trim().length > 0);
@@ -133,6 +189,7 @@ export default function CreateGamePage() {
       startingPoints: Object.keys(startingPoints).length > 0 ? startingPoints : undefined,
     });
 
+    clearCreateDraft();
     setGame(g);
     setIsScorekeeper(true);
     router.push(`/game/${g.id}?keeper=1`);
@@ -169,6 +226,18 @@ export default function CreateGamePage() {
           </div>
         ))}
       </div>
+
+      {draftRestored && (
+        <div className="flex items-center justify-between mb-4 text-[13px] font-body">
+          <span className="text-wolf-text-muted">Picked up where you left off</span>
+          <button
+            onClick={handleStartOver}
+            className="bg-transparent border-none text-wolf-accent cursor-pointer p-0 font-body"
+          >
+            Start over
+          </button>
+        </div>
+      )}
 
       {step === 0 && (
         <>
