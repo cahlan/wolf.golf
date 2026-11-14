@@ -20,20 +20,35 @@ Extract the following data for all 18 holes (front 9 and back 9):
 1. Par for each hole (must be 3, 4, or 5)
 2. Handicap/Stroke Index for each hole (must be unique integers 1-18, where 1 = hardest)
 
-Also extract the course name if visible.
+Also extract the course name if visible ("Unknown Course" if not).
 
-Return ONLY valid JSON in this exact format, no other text:
-{
-  "name": "Course Name",
-  "holes": [
-    {"hole": 1, "par": 4, "strokeIndex": 11},
-    {"hole": 2, "par": 3, "strokeIndex": 17},
-    ...all 18 holes in order...
-  ]
-}
+List all 18 holes in order and set "error" to null.
+If you cannot clearly read the par or stroke index for all 18 holes, return an
+empty "holes" list and set "error" to "Could not read all 18 holes clearly".`;
 
-If you cannot clearly read the par or stroke index for all 18 holes, return:
-{"error": "Could not read all 18 holes clearly"}`;
+// Structured output: the API guarantees the response text matches this schema.
+const SCORECARD_SCHEMA = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    holes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          hole: { type: 'integer' },
+          par: { type: 'integer', enum: [3, 4, 5] },
+          strokeIndex: { type: 'integer' },
+        },
+        required: ['hole', 'par', 'strokeIndex'],
+        additionalProperties: false,
+      },
+    },
+    error: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+  },
+  required: ['name', 'holes', 'error'],
+  additionalProperties: false,
+};
 
 export async function POST(req: NextRequest) {
   if (!ANTHROPIC_API_KEY) {
@@ -79,7 +94,12 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-5-5',
-        max_tokens: 1024,
+        // Thinking tokens count toward max_tokens; leave room so the JSON isn't cut off.
+        max_tokens: 16000,
+        output_config: {
+          effort: 'low',
+          format: { type: 'json_schema', schema: SCORECARD_SCHEMA },
+        },
         messages: [
           {
             role: 'user',
@@ -109,7 +129,12 @@ export async function POST(req: NextRequest) {
     }
 
     const json = await anthropicRes.json();
-    responseText = json.content?.[0]?.text ?? '';
+    // Haiku 5.5 thinks by default, so content[0] is usually a thinking block — find the text block.
+    const textBlock = json.content?.find((b: { type: string }) => b.type === 'text');
+    responseText = textBlock?.text ?? '';
+    if (json.stop_reason !== 'end_turn') {
+      console.error('Scorecard extraction stopped early:', json.stop_reason, json.stop_details);
+    }
   } catch {
     return NextResponse.json({ error: 'Vision API request failed' }, { status: 502 });
   }
@@ -152,6 +177,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch {
+    console.error('Could not parse scorecard response:', responseText.slice(0, 500));
     return NextResponse.json({ error: 'Could not parse scorecard response' }, { status: 422 });
   }
 }
