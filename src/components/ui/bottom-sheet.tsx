@@ -17,7 +17,8 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
       onClick={onClose}
     >
       <div
-        className="bg-wolf-card rounded-2xl border border-wolf-border p-6 max-w-[320px] w-full"
+        className="bg-wolf-card rounded-2xl border border-wolf-border p-6 max-w-[320px] w-full
+          max-h-full overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {children}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Game } from '@/lib/types/game';
-import { HOLES_PER_ROUND, getPlayerStrokesOnHole } from '@/lib/engine';
+import { HOLES_PER_ROUND, getPlayerStrokesOnHole, calculateHandicapNet } from '@/lib/engine';
 import { BottomSheet, Label, StrokeDots } from '@/components/ui';
 
 type ScoreView = 'gross' | 'net';
@@ -11,8 +11,14 @@ function sum(vals: number[]) {
   return vals.reduce((a, b) => a + b, 0);
 }
 
+function formatToPar(n: number) {
+  return n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`;
+}
+
 export function ScorecardSheet({ game, open, onClose }: { game: Game; open: boolean; onClose: () => void }) {
   const [view, setView] = useState<ScoreView>('gross');
+  const [showHandicapNet, setShowHandicapNet] = useState(false);
+  const handicapNet = calculateHandicapNet(game);
   const holes = Array.from({ length: HOLES_PER_ROUND }, (_, i) => i + 1);
 
   const holeByNum = new Map(game.holes.map(h => [h.holeNum, h] as const));
@@ -116,6 +122,52 @@ export function ScorecardSheet({ game, open, onClose }: { game: Game; open: bool
           ? <>Dots mark holes where a player gets a stroke. <span className="text-wolf-accent font-semibold">Green</span> = under par.</>
           : <>Net = gross minus strokes. <span className="text-wolf-accent font-semibold">Green</span> = under par.</>}
       </div>
+
+      {/* Full-handicap net: how each player is doing vs their own handicap (not the match) */}
+      <button
+        onClick={() => setShowHandicapNet(v => !v)}
+        className="mt-3 bg-transparent border-none text-wolf-accent text-[12px] font-mono cursor-pointer p-0 flex items-center gap-1"
+      >
+        <span>{showHandicapNet ? '▾' : '▸'}</span>
+        <span>Net vs handicap</span>
+      </button>
+      {showHandicapNet && (
+        <div className="mt-2">
+          <div className="rounded-[10px] border border-wolf-border overflow-hidden">
+            <table className="w-full border-collapse text-[12px] font-mono">
+              <thead>
+                <tr className="bg-wolf-card text-wolf-text-muted text-[11px]">
+                  <th className="py-2 px-2.5 text-left font-medium">Player</th>
+                  <th className="py-2 px-2 text-center font-medium">Thru</th>
+                  <th className="py-2 px-2 text-center font-medium">Gross</th>
+                  <th className="py-2 px-2 text-center font-medium">Net</th>
+                  <th className="py-2 px-2 text-center font-medium">vs Par</th>
+                </tr>
+              </thead>
+              <tbody>
+                {game.players.map(p => {
+                  const r = handicapNet[p];
+                  return (
+                    <tr key={p} className="border-t border-wolf-border">
+                      <td className="py-2 px-2.5 text-wolf-text font-semibold whitespace-nowrap">{p}</td>
+                      <td className="py-2 px-2 text-center text-wolf-text-muted">{r.holesPlayed}</td>
+                      <td className="py-2 px-2 text-center text-wolf-text">{r.holesPlayed ? r.gross : '·'}</td>
+                      <td className="py-2 px-2 text-center text-wolf-text">{r.holesPlayed ? r.net : '·'}</td>
+                      <td className={`py-2 px-2 text-center font-semibold ${r.toPar < 0 ? 'text-wolf-accent' : 'text-wolf-text'}`}>
+                        {r.holesPlayed ? formatToPar(r.toPar) : '·'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 text-[11px] font-mono text-wolf-text-muted">
+            Net using each player&apos;s full handicap — how you&apos;re playing vs your handicap.
+            The match uses strokes off the low man (Net view above).
+          </div>
+        </div>
+      )}
     </BottomSheet>
   );
 }
