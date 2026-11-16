@@ -37,7 +37,8 @@ jobs:
 
   e2e-tests:
     name: E2E Tests (non-blocking)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which Playwright 1.58 can't install browsers on.
+    runs-on: ubuntu-24.04
     continue-on-error: true  # non-blocking
     steps:
       - uses: actions/checkout@v4
