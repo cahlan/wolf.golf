@@ -9,7 +9,8 @@ export {
 } from './constants';
 export { generateCode, createGame } from './game';
 export { createCourse, courseHoleForRoundPos } from './course';
-export { getPlayerStrokesOnHole, getAllStrokesForHole } from './handicaps';
+export { getPlayerStrokesOnHole, getAllStrokesForHole, getFullHandicapStrokes, calculateHandicapNet } from './handicaps';
+export type { HandicapNet } from './handicaps';
 export { getWolfForHole } from './wolf';
 export { getTeeOrderForHole } from './tee-order';
 export { calculateHolePoints, calculateLoneWolfPoints } from './scoring';
